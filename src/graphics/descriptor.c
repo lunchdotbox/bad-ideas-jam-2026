@@ -1,0 +1,99 @@
+#include "descriptor.h"
+
+#include "device.h"
+#include "device_loop.h"
+#include "texture.h"
+
+VkDescriptorPool createDescriptorPool(Device device, u32 set_count, u32 descriptor_count) {
+    VkDescriptorPoolCreateInfo info = {
+        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
+        .flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT,
+        .pPoolSizes = (VkDescriptorPoolSize[]){
+            {.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, .descriptorCount = set_count * descriptor_count},
+            {.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, .descriptorCount = set_count * descriptor_count},
+        },
+        .poolSizeCount = 2,
+        .maxSets = set_count,
+    };
+
+    VkDescriptorPool descriptor_pool;
+    vkCreateDescriptorPool(device.logical, &info, NULL, &descriptor_pool);
+
+    return descriptor_pool;
+}
+
+VkDescriptorSetLayout createSetLayout(Device device, u32 descriptor_count) {
+    VkDescriptorSetLayoutBinding bindings[] = {
+        (VkDescriptorSetLayoutBinding){.binding = 0, .descriptorCount = descriptor_count, .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT},
+    };
+
+    VkDescriptorBindingFlags flags[] = {
+        VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT,
+    };
+
+    VkDescriptorSetLayoutBindingFlagsCreateInfo flags_info = {
+        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO,
+        .bindingCount = ARRAY_LENGTH(flags),
+        .pBindingFlags = flags,
+    };
+
+    VkDescriptorSetLayoutCreateInfo info = {
+        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+        .pNext = &flags_info,
+        .bindingCount = ARRAY_LENGTH(bindings),
+        .pBindings = bindings,
+    };
+
+    VkDescriptorSetLayout set_layout;
+    vkCreateDescriptorSetLayout(device.logical, &info, NULL, &set_layout);
+
+    return set_layout;
+}
+
+void allocateDescriptorSets(Device device, VkDescriptorSetLayout layout, u32 count, VkDescriptorSet* descriptor_sets) {
+    VkDescriptorSetLayout layouts[count];
+    for (u32 i = 0; i < count; i++) layouts[i] = layout;
+
+    VkDescriptorSetAllocateInfo info = {
+        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
+        .descriptorPool = device.descriptor_pool,
+        .descriptorSetCount = count,
+        .pSetLayouts = layouts,
+    };
+
+    vkAllocateDescriptorSets(device.logical, &info, descriptor_sets);
+}
+
+void freeDescriptorSets(Device device, u32 count, VkDescriptorSet* descriptor_sets) {
+    vkFreeDescriptorSets(device.logical, device.descriptor_pool, count, descriptor_sets);
+}
+
+void setDescriptorImage(Device device, DeviceLoop* loop, u32 index, VkDescriptorImageInfo image) {
+    VkWriteDescriptorSet write = {
+        .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+        .pImageInfo = &image,
+        .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        .descriptorCount = 1,
+        .dstArrayElement = index,
+        .dstSet = loop->descriptor_sets[loop->frame],
+        .dstBinding = 0,
+    };
+
+    vkUpdateDescriptorSets(device.logical, 1, &write, 0, NULL);
+    loop->written = true;
+}
+
+u32 addDescriptorImage(Device device, DeviceLoop* loop, VkDescriptorImageInfo image) {
+    setDescriptorImage(device, loop, loop->set_index, image);
+    return loop->set_index++;
+}
+
+u32 addDescriptorTexture(Device device, DeviceLoop* loop, Texture texture) {
+    VkDescriptorImageInfo info = {
+        .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+        .imageView = texture.color_view,
+        .sampler = device.sampler,
+    };
+
+    return addDescriptorImage(device, loop, info);
+}

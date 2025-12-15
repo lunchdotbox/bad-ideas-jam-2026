@@ -18,8 +18,10 @@ SPV_DIR = spv
 # Program name
 TARGET = program
 
+rwildcard=$(foreach d,$(wildcard $(1:=/*)),$(call rwildcard,$d,$2) $(filter $(subst *,%,$2),$d))
+
 # Collect all C source files
-SRCS = $(wildcard $(SRC_DIR)/*.c)
+SRCS = $(call rwildcard,$(SRC_DIR),*.c)
 OBJS = $(patsubst $(SRC_DIR)/%.c, $(OBJ_DIR)/%.o, $(SRCS))
 
 # Collect all GLSL shader files
@@ -40,7 +42,7 @@ $(TARGET): $(OBJS)
 
 # Compile C source to object files
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
-	@mkdir -p $(OBJ_DIR)
+	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 # Compile shaders with glslc
