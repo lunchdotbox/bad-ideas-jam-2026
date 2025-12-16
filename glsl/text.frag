@@ -1,13 +1,16 @@
 #version 450
-#include "bezier.glsl"
+#extension GL_EXT_nonuniform_qualifier : enable
+
+layout(binding = 0) uniform sampler2D textures[];
+
+layout(push_constant) uniform Push {
+    uint texture_id;
+} push;
 
 layout(location = 0) in vec2 in_uv;
 
 layout(location = 0) out vec4 outColor;
 
 void main() {
-    float sdf = sdBezier(in_uv, vec2(0.25, 0.75), vec2(0.5, 0.5), vec2(0.75, 0.75));
-
-    outColor = vec4(0.0);
-    if (sdf < 0.002) outColor = vec4(1.0);
+    outColor = texture(textures[push.texture_id], in_uv);
 }

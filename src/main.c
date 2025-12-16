@@ -1,3 +1,5 @@
+#include "graphics/descriptor.h"
+#include <vulkan/vulkan_core.h>
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE 1
 #define GLM_FORCE_RADIANS 1
 
@@ -30,12 +32,16 @@ int main() {
     setPipelineFragmentShader(&pipeline_config, createShaderModule(device, "spv/text.frag.spv"));
     VkPipeline pipeline = createPipeline(device, pipeline_config);
 
+    Texture font_atlas = loadTexture(device, &window.device_loop, QUEUE_TYPE_GRAPHICS, "images/fonts/minogram_6x10.png");
+    u32 font_id = addDescriptorTexture(device, &window.device_loop, 0, font_atlas);
+
     while (!glfwWindowShouldClose(window.window)) {
         glfwPollEvents();
 
         u32 image = beginWindowFrame(&window, device, (VkClearColorValue){0, 20, 255, 0});
 
         vkCmdBindPipeline(currentCommand(window), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+        vkCmdPushConstants(currentCommand(window), device.pipeline_layout, VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(u32), &font_id);
         vkCmdDraw(currentCommand(window), 6, 1, 0, 0);
 
         endWindowFrame(&window, device, image);

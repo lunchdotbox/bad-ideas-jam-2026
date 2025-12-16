@@ -11,6 +11,6 @@ void allocateDescriptorSets(Device device, VkDescriptorSetLayout layout, u32 cou
 void freeDescriptorSets(Device device, u32 count, VkDescriptorSet* descriptor_sets);
 void setDescriptorImage(Device device, DeviceLoop* loop, u32 index, VkDescriptorImageInfo image);
 u32 addDescriptorImage(Device device, DeviceLoop* loop, VkDescriptorImageInfo image);
-u32 addDescriptorTexture(Device device, DeviceLoop* loop, Texture texture);
+u32 addDescriptorTexture(Device device, DeviceLoop* loop, u32 sampler, Texture texture);
 
 #endif

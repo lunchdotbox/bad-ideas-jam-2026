@@ -8,7 +8,7 @@
 typedef struct Device {
     VkPhysicalDevice physical;
     VkDevice logical;
-    VkSampler sampler;
+    VkSampler samplers[2];
     VkPipelineLayout pipeline_layout;
     VkDescriptorPool descriptor_pool;
     VkDescriptorSetLayout set_layout;

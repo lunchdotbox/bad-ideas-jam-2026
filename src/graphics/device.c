@@ -4,6 +4,8 @@
 #include "command.h"
 #include "graphics_pipeline.h"
 #include "texture.h"
+#include <elc/core.h>
+#include <vulkan/vulkan_core.h>
 
 ELC_INLINE VkQueueFamilyProperties* getPhysicalDeviceQueueFamilyProperties(VkInstance instance, VkPhysicalDevice physical_device, u32* n_properties) {
     vkGetPhysicalDeviceQueueFamilyProperties(physical_device, n_properties, NULL);
@@ -170,13 +172,14 @@ Device createDevice(VkInstance instance) {
     device.graphics_pool = createCommandPool(device, device.graphics_family);
     device.present_pool = createCommandPool(device, device.present_family);
     device.compute_pool = createCommandPool(device, device.compute_family);
-    device.sampler = createSampler(device, true, VK_COMPARE_OP_ALWAYS, VK_SAMPLER_ADDRESS_MODE_REPEAT);
+    device.samplers[0] = createSampler(device, false, VK_COMPARE_OP_ALWAYS, VK_SAMPLER_ADDRESS_MODE_REPEAT);
+    device.samplers[1] = createSampler(device, true, VK_COMPARE_OP_ALWAYS, VK_SAMPLER_ADDRESS_MODE_REPEAT);
     return device;
 }
 
 void destroyDevice(Device device, VkInstance instance) {
     vkDeviceWaitIdle(device.logical);
-    vkDestroySampler(device.logical, device.sampler, NULL);
+    for (u32 i = 0; i < ARRAY_LENGTH(device.samplers); i++) vkDestroySampler(device.logical, device.samplers[i], NULL);
     vkDestroyCommandPool(device.logical, device.graphics_pool, NULL);
     vkDestroyCommandPool(device.logical, device.present_pool, NULL);
     vkDestroyCommandPool(device.logical, device.compute_pool, NULL);
