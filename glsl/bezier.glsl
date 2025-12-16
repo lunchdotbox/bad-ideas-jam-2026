@@ -1,5 +1,9 @@
 // credit to Inigo Quilez (https://iquilezles.org/articles/distfunctions2d/)
 
+float dot2(vec2 vector) {
+    return dot(vector, vector);
+}
+
 float sdBezier(in vec2 pos, in vec2 A, in vec2 B, in vec2 C)
 {
     vec2 a = B - A;
@@ -37,3 +41,5 @@ float sdBezier(in vec2 pos, in vec2 A, in vec2 B, in vec2 C)
     }
     return sqrt(res);
 }
+
+uint intersectBezier(in vec2 pos, in vec2 A, in vec2 B, in vec2 C) {}
