@@ -31,5 +31,6 @@ VkFormat findSupportedFormat(Device device, VkFormat* candidates, u32 n_candidat
 u32 findMemoryType(Device device, u32 filter, VkMemoryPropertyFlags properties);
 VkDeviceMemory allocateDeviceMemory(Device device, VkMemoryPropertyFlags properties, VkMemoryRequirements requirements);
 void* mapDeviceMemory(Device device, VkDeviceMemory memory, VkDeviceSize offset, VkDeviceSize range);
+void flushDeviceMemory(Device device, VkDeviceMemory memory, VkDeviceSize offset, VkDeviceSize size);
 
 #endif

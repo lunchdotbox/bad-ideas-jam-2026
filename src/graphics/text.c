@@ -6,8 +6,25 @@
 #include "graphics_pipeline.h"
 #include "descriptor.h"
 #include "texture.h"
-#include "command.h"
-#include <vulkan/vulkan_core.h>
+#include <cglm/affine2d.h>
+#include <cglm/mat3.h>
+#include <cglm/vec2.h>
+#include <cglm/vec3.h>
+#include <fcntl.h>
+#include <string.h>
+
+static const u32 atlas_ascii_map[] = {
+    ['A'] = 0, ['B'] = 1, ['C'] = 2, ['D'] = 3, ['E'] = 4, ['F'] = 5, ['G'] = 6, ['H'] = 7, ['I'] = 8, ['J'] = 9, ['K'] = 10, ['L'] = 11, ['M'] = 12,
+    ['N'] = 13, ['O'] = 14, ['P'] = 15, ['Q'] = 16, ['R'] = 17, ['S'] = 18, ['T'] = 19, ['U'] = 20, ['V'] = 21, ['W'] = 22, ['X'] = 23, ['Y'] = 24, ['Z'] = 25,
+
+    ['a'] = 26, ['b'] = 27, ['c'] = 28, ['d'] = 29, ['e'] = 30, ['f'] = 31, ['g'] = 32, ['h'] = 33, ['i'] = 34, ['j'] = 35, ['k'] = 36, ['l'] = 37, ['m'] = 38,
+    ['n'] = 39, ['o'] = 40, ['p'] = 41, ['q'] = 42, ['r'] = 43, ['s'] = 44, ['t'] = 45, ['u'] = 46, ['v'] = 47, ['w'] = 48, ['x'] = 49, ['y'] = 50, ['z'] = 51,
+
+    ['0'] = 52, ['1'] = 53, ['2'] = 54, ['3'] = 55, ['4'] = 56, ['5'] = 57, ['6'] = 58, ['7'] = 59, ['8'] = 60, ['9'] = 61,
+
+    ['+'] = 62, ['-'] = 63, ['='] = 64, ['('] = 65, [')'] = 66, ['['] = 67, [']'] = 68, ['{'] = 69, ['}'] = 70, ['<'] = 71, ['>'] = 72, ['/'] = 73, ['*'] = 74,
+    [':'] = 75, ['#'] = 76, ['%'] = 77, ['!'] = 78, ['?'] = 79, ['.'] = 80, [','] = 81, ['\''] = 82, ['"'] = 83, ['@'] = 84, ['&'] = 85, ['$'] = 86,
+};
 
 TextRenderer createTextRenderer(Device device, PipelineConfig config) {
     TextRenderer text_renderer;
@@ -19,6 +36,7 @@ TextRenderer createTextRenderer(Device device, PipelineConfig config) {
     config.color_attachments->srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
     config.color_attachments->dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
     config.color_attachments->colorBlendOp = VK_BLEND_OP_ADD;
+    config.enable_depth = VK_FALSE;
     setPipelineVertexShader(&config, createShaderModule(device, "spv/text.vert.spv"));
     setPipelineFragmentShader(&config, createShaderModule(device, "spv/text.frag.spv"));
     text_renderer.pipeline = createPipeline(device, config);
@@ -29,40 +47,62 @@ void destroyTextRenderer(Device device, TextRenderer renderer) {
     vkDestroyPipeline(device.logical, renderer.pipeline, NULL);
 }
 
-TextFont createTextFont(Device device, DeviceLoop* loop) {
-    TextFont font;
-    font.buffer_size = 1;
+TextFont createTextFont(Device device, DeviceLoop* loop, u64 buffer_size) {
+    TextFont font = {0};
+    font.buffer_size = buffer_size;
     font.texture = loadTexture(device, loop, QUEUE_TYPE_GRAPHICS, "images/fonts/minogram_6x10.png");
     font.push.texture_id = addDescriptorTexture(device, loop, 0, font.texture);
-    font.buffer = createValidBuffer(device, sizeof(TextCharacter), VK_BUFFER_USAGE_TRANSFER_SRC_BIT, false, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-    TextCharacter* character_mapped = mapDeviceMemory(device, font.buffer.memory, 0, sizeof(TextCharacter) * font.buffer_size);
-    *character_mapped = (TextCharacter){0};
-    character_mapped->transform1[0] = 0.5f / 13.0f;
-    character_mapped->transform2[1] = 0.5f / 7.0f;
-    character_mapped->transform2[2] = 1.0f;
-    character_mapped->character = 13;
-    makePermanentBuffers(device, QUEUE_TYPE_GRAPHICS, 1, &font.buffer, (size_t[]){sizeof(TextCharacter) * font.buffer_size}, (VkBufferUsageFlags[]){VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT}, (bool[]){false});
+    font.buffer = createValidBuffer(device, sizeof(TextCharacter) * font.buffer_size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT, false, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
     font.push.transform_buffer_id = addDescriptorStorageBuffer(device, loop, font.buffer.buffer, 0, sizeof(TextCharacter) * font.buffer_size);
+    font.buffer_mapped = mapDeviceMemory(device, font.buffer.memory, 0, font.buffer_size);
     return font;
 }
 
 void destroyTextFont(Device device, TextFont font) {
+    vkUnmapMemory(device.logical, font.buffer.memory);
     destroyValidBuffer(device, font.buffer);
     destroyTexture(device, font.texture);
 }
 
-void resizeTextFont(Device device, TextFont* font, u64 new_size) {
-    ValidBuffer new_buffer = createValidBuffer(device, sizeof(TextCharacter) * new_size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, false, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-    VkCommandBuffer command = beginSingleTimeCommands(device, QUEUE_TYPE_GRAPHICS);
-    if (new_size > font->buffer_size) vkCmdFillBuffer(command, new_buffer.buffer, font->buffer_size * sizeof(TextCharacter), (new_size - font->buffer_size) * sizeof(TextCharacter), 0);
-    commandCopyBuffer(command, font->buffer.buffer, new_buffer.buffer, MIN(font->buffer_size, new_size) * sizeof(TextCharacter));
-    destroyValidBuffer(device, font->buffer);
-    font->buffer = new_buffer;
-    font->buffer_size = new_size;
+void drawTextFont(VkCommandBuffer command, Device device, TextRenderer renderer, TextFont* font) {
+    flushDeviceMemory(device, font->buffer.memory, 0, VK_WHOLE_SIZE);
+    vkCmdBindPipeline(command, VK_PIPELINE_BIND_POINT_GRAPHICS, renderer.pipeline);
+    vkCmdPushConstants(command, device.pipeline_layout, VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(TextPushConstant), &font->push);
+    vkCmdDraw(command, 6, font->n_text, 0, 0);
+    font->n_text = 0;
 }
 
-void drawTextFont(VkCommandBuffer command, Device device, TextRenderer renderer, TextFont font) {
-    vkCmdBindPipeline(command, VK_PIPELINE_BIND_POINT_GRAPHICS, renderer.pipeline);
-    vkCmdPushConstants(command, device.pipeline_layout, VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(TextPushConstant), &font.push);
-    vkCmdDraw(command, 6, 1, 0, 0);
+void addFontCharacters(TextFont* font, TextCharacter* text, u64 n_text) {
+    memcpy(&font->buffer_mapped[font->n_text], text, sizeof(TextCharacter) * n_text);
+    font->n_text += n_text;
+}
+
+TextCharacter makeTextCharacter(mat3 transform, u32 text) {
+    TextCharacter character = {0};
+    glm_vec3_copy(transform[0], character.transform1);
+    glm_vec3_copy(transform[1], character.transform2);
+    glm_vec3_copy(transform[2], character.transform3);
+    character.character = text;
+    return character;
+}
+
+void addFontLetter(TextFont* font, mat3 transform, char letter) {
+    font->buffer_mapped[font->n_text++] = makeTextCharacter(transform, atlas_ascii_map[letter]);
+}
+
+void addFontText(TextFont* font, mat3 trans, const char* text) {
+    vec2 offset = {0};
+    for (const char* letter = text; *letter != '\0'; letter++) {
+        if (*letter == '\n') {
+            offset[0] = 0.0f;
+            offset[1] += 2.0f;
+        } else if (*letter == ' ') offset[0] += 1.0f;
+        else {
+            mat3 transform;
+            glm_translate2d_make(transform, offset);
+            glm_mat3_mul(trans, transform, transform);
+            addFontLetter(font, transform, *letter);
+            offset[0] += 2.0f;
+        }
+    }
 }

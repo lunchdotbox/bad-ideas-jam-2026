@@ -24,7 +24,7 @@ void destroyWindow(Window window, Device device, VkInstance instance);
 u32 acquireNextSwapchainImage(Device device, Window* window);
 void submitAndPresent(Device device, Window* window, VkCommandBuffer command, u32 image_index);
 VkCommandBuffer currentCommand(Window window);
-u32 beginWindowFrame(Window* window, Device device, VkClearColorValue clear);
+u32 beginWindowFrame(Window* window, Device device);
 void endWindowFrame(Window* window, Device device, u32 image);
 
 #endif

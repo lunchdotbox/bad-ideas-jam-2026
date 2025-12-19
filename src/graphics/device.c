@@ -233,3 +233,14 @@ void* mapDeviceMemory(Device device, VkDeviceMemory memory, VkDeviceSize offset,
     vkMapMemory(device.logical, memory, offset, range, 0, &mapped);
     return mapped;
 }
+
+void flushDeviceMemory(Device device, VkDeviceMemory memory, VkDeviceSize offset, VkDeviceSize size) {
+    VkMappedMemoryRange range = {
+        .sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE,
+        .memory = memory,
+        .offset = offset,
+        .size = size,
+    };
+
+    vkFlushMappedMemoryRanges(device.logical, 1, &range);
+}

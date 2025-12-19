@@ -2,6 +2,7 @@
 #define TEXT_H
 
 #include "buffer.h"
+#include "device_loop.h"
 #include "texture.h"
 #include <elc/core.h>
 #define GLFW_INCLUDE_VULKAN
@@ -29,15 +30,19 @@ typedef struct TextRenderer {
 typedef struct TextFont {
     Texture texture;
     ValidBuffer buffer;
-    u64 buffer_size;
+    TextCharacter* buffer_mapped;
+    u64 buffer_size, n_text;
     TextPushConstant push;
 } TextFont;
 
 TextRenderer createTextRenderer(Device device, PipelineConfig config);
 void destroyTextRenderer(Device device, TextRenderer renderer);
-TextFont createTextFont(Device device, DeviceLoop* loop);
+TextFont createTextFont(Device device, DeviceLoop* loop, u64 buffer_size);
 void destroyTextFont(Device device, TextFont font);
-void resizeTextFont(Device device, TextFont* font, u64 new_size);
-void drawTextFont(VkCommandBuffer command, Device device, TextRenderer renderer, TextFont font);
+void drawTextFont(VkCommandBuffer command, Device device, TextRenderer renderer, TextFont* font);
+void addFontCharacters(TextFont* font, TextCharacter* text, u64 n_text);
+TextCharacter makeTextCharacter(mat3 transform, u32 text);
+void addFontLetter(TextFont* font, mat3 transform, char letter);
+void addFontText(TextFont* font, mat3 trans, const char* text);
 
 #endif

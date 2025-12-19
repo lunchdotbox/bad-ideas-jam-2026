@@ -173,11 +173,10 @@ VkCommandBuffer currentCommand(Window window) {
     return window.device_loop.commands[window.device_loop.frame];
 }
 
-u32 beginWindowFrame(Window* window, Device device, VkClearColorValue clear) {
+u32 beginWindowFrame(Window* window, Device device) {
     u32 image = acquireNextSwapchainImage(device, window);
     vkResetCommandBuffer(currentCommand(*window), 0);
     beginCommandBuffer(currentCommand(*window));
-    beginRenderPass(window->render_pass, window->framebuffers[image], window->extent, currentCommand(*window), &clear, 1.0f);
     vkCmdBindDescriptorSets(currentCommand(*window), VK_PIPELINE_BIND_POINT_GRAPHICS, device.pipeline_layout, 0, 1, &(VkDescriptorSet){getLoopSet(window->device_loop)}, 0, NULL);
     return image;
 }
