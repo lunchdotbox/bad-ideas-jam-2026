@@ -104,7 +104,7 @@ void destroyTexture(Device device, Texture texture) {
 
 void uploadImageData(Device device, QueueType type, VkExtent3D extent, void* data, u64 data_size, VkImage image) {
     VkBuffer staging_buffer = createBuffer(device, data_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, false);
-    VkDeviceMemory staging_memory = createBufferMemory(device, staging_buffer, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    VkDeviceMemory staging_memory = createBuffersMemory(device, &staging_buffer, 1, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
     void* staging_buffer_mapped;
     vkMapMemory(device.logical, staging_memory, 0, data_size, 0, &staging_buffer_mapped);

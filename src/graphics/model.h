@@ -33,7 +33,7 @@ typedef struct VulkanVertex {
 typedef struct Model {
     VkBuffer vertex_buffer, index_buffer;
     VkDeviceMemory vertex_memory, index_memory;
-    u32 vertex_count, index_count;
+    u32 vertex_count, index_count; // TODO: make a macro to generate one memory multiple buffer structs
 } Model;
 
 Model createModel(Device device, u32 vertex_size, u32 vertex_count, u32 index_count, void** vertex_mapped, void** index_mapped);

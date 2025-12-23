@@ -18,12 +18,13 @@ VkBuffer createBuffer(Device device, VkDeviceSize size, VkBufferUsageFlags usage
     return buffer;
 }
 
-VkDeviceMemory createBufferMemory(Device device, VkBuffer buffer, VkMemoryPropertyFlags properties) {
+VkDeviceMemory createBuffersMemory(Device device, VkBuffer* buffers, u32 n_buffers, VkMemoryPropertyFlags properties) {
     VkMemoryRequirements requirements;
-    vkGetBufferMemoryRequirements(device.logical, buffer, &requirements);
+    vkGetBufferMemoryRequirements(device.logical, *buffers, &requirements);
+    requirements.size *= n_buffers;
 
     VkDeviceMemory memory = allocateDeviceMemory(device, properties, requirements);
-    vkBindBufferMemory(device.logical, buffer, memory, 0);
+    for (u32 i = 0; i < n_buffers; i++) vkBindBufferMemory(device.logical, buffers[i], memory, i * (requirements.size / n_buffers));
 
     return memory;
 }
@@ -39,7 +40,7 @@ void copyBuffer(Device device, QueueType type, VkBuffer src_buffer, VkBuffer dst
 ValidBuffer createValidBuffer(Device device, VkDeviceSize size, VkBufferUsageFlags usage, bool concurrent, VkMemoryPropertyFlags properties) {
     ValidBuffer buffer;
     buffer.buffer = createBuffer(device, size, usage, concurrent);
-    buffer.memory = createBufferMemory(device, buffer.buffer, properties);
+    buffer.memory = createBuffersMemory(device, &buffer.buffer, 1, properties);
     return buffer;
 }
 

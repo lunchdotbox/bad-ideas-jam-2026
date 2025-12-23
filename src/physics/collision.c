@@ -417,7 +417,7 @@ bool gilbertJohnsonKeerthi(Particle* body_a, CollisionMesh mesh_a, Particle* bod
         }
     }
 
-    collisionResultFromSimplex(&points, result);
+    collisionResultFromSimplex(&points, result); // TODO: make sure the bug this function seemed to have when used with EPA doesnt affect this as well
     completeCollisionResult(body_a, body_b, result);
     result->penetration = -result->penetration;
     return false;

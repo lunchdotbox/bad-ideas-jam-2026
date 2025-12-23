@@ -34,7 +34,7 @@ typedef struct TextRenderer {
 
 typedef struct TextFont {
     Texture texture;
-    ValidBuffer buffer;
+    ValidBuffer buffer; // TODO: figure out if this should have two buffers instead
     TextCharacter* buffer_mapped;
     u64 buffer_size, n_text;
     u32 texture_id, buffer_id;

@@ -28,9 +28,11 @@ VkDescriptorSetLayout createSetLayout(Device device, u32 descriptor_count) {
     VkDescriptorSetLayoutBinding bindings[] = {
         (VkDescriptorSetLayoutBinding){.binding = 0, .descriptorCount = descriptor_count, .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT},
         (VkDescriptorSetLayoutBinding){.binding = 1, .descriptorCount = descriptor_count, .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT},
+        (VkDescriptorSetLayoutBinding){.binding = 2, .descriptorCount = descriptor_count, .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT},
     };
 
     VkDescriptorBindingFlags flags[] = {
+        VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT,
         VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT,
         VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT,
     };
