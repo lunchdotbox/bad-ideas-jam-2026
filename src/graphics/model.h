@@ -7,7 +7,7 @@
 
 #define MODEL_PIPELINE_CONFIG ((PipelineConfig){\
     .primitive_topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,\
-    .cull_mode = VK_CULL_MODE_NONE,\
+    .cull_mode = VK_CULL_MODE_BACK_BIT,\
     .enable_depth = VK_TRUE,\
     .depth_op = VK_COMPARE_OP_LESS,\
     .bindings = &(VkVertexInputBindingDescription){.binding = 0, .stride = sizeof(VulkanVertex), .inputRate = VK_VERTEX_INPUT_RATE_VERTEX},\

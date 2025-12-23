@@ -1,9 +1,9 @@
-#include "graphics/buffer.h"
-#include "graphics/color.h"
 #include "graphics/command.h"
 #include "graphics/descriptor.h"
-#include "graphics/wavefront.h"
+#include "formats/wavefront.h"
+#include "physics/mesh_inertia.h"
 #include <GLFW/glfw3.h>
+#include <cglm/affine-pre.h>
 #include <cglm/affine2d.h>
 #include <cglm/types.h>
 #include <elc/core.h>
@@ -16,8 +16,6 @@
 #include "graphics/graphics_pipeline.h"
 #include "graphics/model.h"
 #include "graphics/texture.h"
-#include "graphics/text.h"
-#include "graphics/render_target.h"
 #include "graphics/camera.h"
 
 int main() {
@@ -30,13 +28,22 @@ int main() {
     // TextFont text_font = createTextFont(device, &window.device_loop, ELC_KILOBYTE, "images/fonts/minogram_6x10.png");
 
     PipelineConfig pipeline_config = windowPipelineConfig(window);
+    pipeline_config.polygon_mode = VK_POLYGON_MODE_LINE;
     setPipelineVertexShader(&pipeline_config, createShaderModule(device, "spv/terrain.vert.spv"));
     setPipelineFragmentShader(&pipeline_config, createShaderModule(device, "spv/diffuse.frag.spv"));
     VkPipeline pipeline = createPipeline(device, pipeline_config);
 
     Camera camera = createCamera();
+    glfwSetInputMode(window.window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
-    Model model = loadWavefront(device, "models/cat.obj");
+    HostMesh mesh = loadWavefront("models/piston_head.obj");
+    mat3 inertia;
+    vec3 com;
+    float mass;
+    computeMeshInertia(mesh, 1.0f, inertia, com, &mass);
+    glm_vec3_print(com, stdout);
+    Model model = hostMeshToModel(device, mesh);
+    destroyHostMesh(mesh);
     Texture texture = loadTexture(device, &window.device_loop, QUEUE_TYPE_GRAPHICS, "images/cat.png");
     addDescriptorTexture(device, &window.device_loop, SAMPLER_LINEAR, texture);
 
@@ -52,6 +59,12 @@ int main() {
         commandPushConstants(currentCommand(window), device, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, sizeof(push), &push);
 
         vkCmdBindPipeline(currentCommand(window), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+
+        drawModel(currentCommand(window), model);
+
+        glm_translate(push.model_matrix, com);
+        glm_scale(push.model_matrix, (vec3){0.1f, 0.1f, 0.1f});
+        commandPushConstants(currentCommand(window), device, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, sizeof(push), &push);
 
         drawModel(currentCommand(window), model);
 

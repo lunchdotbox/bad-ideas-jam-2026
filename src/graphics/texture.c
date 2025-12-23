@@ -2,7 +2,7 @@
 
 #include "command.h"
 #include "buffer.h"
-#include "stb_image.h"
+#include "../formats/stb_image.h"
 #include "device_loop.h"
 
 VkSampler createSampler(Device device, bool linear, VkCompareOp compare_op, VkSamplerAddressMode address_mode) {

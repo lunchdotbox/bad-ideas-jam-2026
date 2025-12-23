@@ -1,8 +1,8 @@
 #ifndef WAVEFRONT_H
 #define WAVEFRONT_H
 
-#include "device.h"
-#include "model.h"
+#include "../graphics/device.h"
+#include "../graphics/model.h"
 
 typedef struct Index {
     u32 position;
@@ -23,7 +23,9 @@ typedef struct HostMesh {
 void parseWavefrontFaces(char* data, size_t n_data, vec3s* positions, u32* n_positions, vec3s* normals, u32* n_normals, vec2s* uvs, u32* n_uvs, Face* faces, u32* n_faces);
 void buildWavefrontMesh(vec3s* positions, u32 n_positions, vec3s* normals, u32 n_normals, vec2s* uvs, u32 n_uvs, Face* faces, u32 n_faces, HostMesh* mesh);
 HostMesh parseWavefront(char* data, size_t n_data);
-Model modelFromWavefront(Device device, char* data, size_t n_data);
-Model loadWavefront(Device device, const char* path);
+void destroyHostMesh(HostMesh mesh);
+Model hostMeshToModel(Device device, HostMesh mesh);
+HostMesh loadWavefront(const char* path);
+Model loadWavefrontModel(Device device, const char* path);
 
 #endif

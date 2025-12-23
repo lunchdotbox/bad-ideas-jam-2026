@@ -1,7 +1,8 @@
+/* this is a horrible terrible no good parser with so many issues and vulnerabilities.
+ * please future me if you have more time update this to use a token based parser, please. */
+
 #include "wavefront.h"
 
-#include "device.h"
-#include "model.h"
 #include <cglm/io.h>
 #include <cglm/vec2-ext.h>
 #include <cglm/vec3-ext.h>
@@ -118,7 +119,9 @@ void parseWavefrontFaces(char* data, size_t n_data, vec3s* positions, u32* n_pos
                 if (faces != NULL) faces[*n_faces] = face;
                 (*n_faces)++;
                 break;
-            default: break;
+            default:
+                while (n_data > 0 && *data != '\n') data++, n_data--;
+                break;
         }
         data++, n_data--;
     }
@@ -198,20 +201,29 @@ HostMesh parseWavefront(char* data, size_t n_data) {
     return mesh;
 }
 
-Model modelFromWavefront(Device device, char *data, size_t n_data) {
-    HostMesh mesh = parseWavefront(data, n_data);
+void destroyHostMesh(HostMesh mesh) {
+    free(mesh.indices), free(mesh.vertices);
+}
+
+Model hostMeshToModel(Device device, HostMesh mesh) {
     void* vertex_mapped, *index_mapped;
     Model model = createModel(device, sizeof(VulkanVertex), mesh.n_vertices, mesh.n_indices, &vertex_mapped, &index_mapped);
     memcpy(vertex_mapped, mesh.vertices, sizeof(VulkanVertex) * mesh.n_vertices);
     memcpy(index_mapped, mesh.indices, sizeof(u32) * mesh.n_indices);
     finishModelUpload(device, &model, sizeof(VulkanVertex));
-    free(mesh.indices), free(mesh.vertices);
     return model;
 }
 
-Model loadWavefront(Device device, const char* path) {
+HostMesh loadWavefront(const char* path) {
     MappedFile mapped = memoryMapFile(path);
-    Model model = modelFromWavefront(device, mapped.memory, mapped.size);
+    HostMesh mesh = parseWavefront(mapped.memory, mapped.size);
     memoryUnmapFile(mapped);
+    return mesh;
+}
+
+Model loadWavefrontModel(Device device, const char* path) {
+    HostMesh mesh = loadWavefront(path);
+    Model model = hostMeshToModel(device, mesh);
+    destroyHostMesh(mesh);
     return model;
 }
