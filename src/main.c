@@ -32,7 +32,7 @@ int main() {
     TextFont text_font = createTextFont(device, &window.device_loop, ELC_KILOBYTE, "images/fonts/minogram_6x10.png");
 
     PipelineConfig pipeline_config = windowPipelineConfig(window);
-    pipeline_config.polygon_mode = VK_POLYGON_MODE_LINE;
+    // pipeline_config.polygon_mode = VK_POLYGON_MODE_LINE;
     setPipelineVertexShader(&pipeline_config, createShaderModule(device, "spv/terrain.vert.spv"));
     setPipelineFragmentShader(&pipeline_config, createShaderModule(device, "spv/diffuse.frag.spv"));
     VkPipeline pipeline = createPipeline(device, pipeline_config);
@@ -40,7 +40,7 @@ int main() {
     Camera camera = createCamera();
     glfwSetInputMode(window.window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
-    HostMesh mesh = loadWavefront("models/piston_rod.obj");
+    HostMesh mesh = loadWavefront("models/cat.obj");
     mat3 inertia;
     vec3 com;
     float mass;
@@ -82,7 +82,6 @@ int main() {
         drawModel(currentCommand(window), model);
 
         addTextPositioned(&text_font, (vec2){0}, (vec2){0.1f, 0.1f}, COLOR_RED, "deez");
-
         drawTextFont(currentCommand(window), device, text_renderer, &text_font, windowAspect(window));
 
         endWindowFrame(&window, device, image);
