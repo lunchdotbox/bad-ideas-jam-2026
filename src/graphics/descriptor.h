@@ -14,5 +14,7 @@ u32 addDescriptorImage(Device device, DeviceLoop* loop, VkDescriptorImageInfo im
 u32 addDescriptorTexture(Device device, DeviceLoop* loop, u32 sampler, Texture texture);
 void setDescriptorStorageBuffer(Device device, DeviceLoop* loop, u32 index, VkDescriptorBufferInfo buffer);
 u32 addDescriptorStorageBuffer(Device device, DeviceLoop* loop, VkBuffer buffer, VkDeviceSize offset, VkDeviceSize range);
+void setDescriptorUniformBuffer(Device device, DeviceLoop* loop, u32 index, VkDescriptorBufferInfo buffer);
+u32 addDescriptorUniformBuffer(Device device, DeviceLoop* loop, VkBuffer buffer, VkDeviceSize offset, VkDeviceSize range);
 
 #endif

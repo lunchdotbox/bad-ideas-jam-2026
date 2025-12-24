@@ -8,14 +8,10 @@ Camera createCamera() {
     return camera;
 }
 
-CameraPushConstant getCameraPush(Camera camera) {
-    CameraPushConstant push;
-    glm_euler(camera.rotation, push.view_matrix);
-    glm_translate(push.view_matrix, camera.position);
-    glm_mat4_mul(camera.projection, push.view_matrix, push.view_matrix);
-    glm_mat4_identity(push.model_matrix);
-
-    return push;
+void getCameraMatrix(Camera camera, mat4 dest) {
+    glm_euler(camera.rotation, dest);
+    glm_translate(dest, camera.position);
+    glm_mat4_mul(camera.projection, dest, dest);
 }
 
 void updateCamera(Camera* camera, Window window) {

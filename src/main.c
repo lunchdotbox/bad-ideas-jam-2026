@@ -1,10 +1,12 @@
 #include "graphics/command.h"
 #include "graphics/descriptor.h"
 #include "formats/wavefront.h"
+#include "graphics/uniform.h"
 #include "physics/mesh_inertia.h"
 #include <GLFW/glfw3.h>
 #include <cglm/affine-pre.h>
 #include <cglm/affine2d.h>
+#include <cglm/mat4.h>
 #include <cglm/types.h>
 #include <elc/core.h>
 #include <vulkan/vulkan_core.h>
@@ -45,7 +47,11 @@ int main() {
     Model model = hostMeshToModel(device, mesh);
     destroyHostMesh(mesh);
     Texture texture = loadTexture(device, &window.device_loop, QUEUE_TYPE_GRAPHICS, "images/cat.png");
+    CameraPushConstant push;
+    glm_mat4_identity(push.model_matrix);
     addDescriptorTexture(device, &window.device_loop, SAMPLER_LINEAR, texture);
+    UniformBuffer uniform = createUniformBuffer(device, sizeof(mat4));
+    addDescriptorUniformBuffer(device, &window.device_loop, uniform.buffer.buffer, 0, VK_WHOLE_SIZE);
 
     while (!glfwWindowShouldClose(window.window)) {
         glfwPollEvents();
@@ -55,7 +61,10 @@ int main() {
         u32 image = beginWindowFrame(&window, device);
         beginWindowPass(window, image, (vec4){0.25f, 0.25f, 0.25f, 0.0f});
 
-        CameraPushConstant push = getCameraPush(camera);
+        mat4 view_matrix;
+        getCameraMatrix(camera, view_matrix);
+        updateUniformBuffer(device, uniform, view_matrix, sizeof(view_matrix));
+
         commandPushConstants(currentCommand(window), device, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, sizeof(push), &push);
 
         vkCmdBindPipeline(currentCommand(window), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
@@ -73,6 +82,7 @@ int main() {
 
     vkDeviceWaitIdle(device.logical);
 
+    destroyUniformBuffer(device, uniform);
     destroyTexture(device, texture);
     destroyModel(device, model);
     vkDestroyPipeline(device.logical, pipeline, NULL);

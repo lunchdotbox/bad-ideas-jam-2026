@@ -2,10 +2,14 @@
 #define CAMERA_H
 
 #include <cglm/cglm.h>
+#include <stdalign.h>
 #include "window.h"
 
-typedef struct CameraPushConstant {
-    mat4 view_matrix, model_matrix;
+typedef struct CameraPushConstant { // TODO: move this struct somewhere else and rename it cause its not just the camera data
+    // u32 uniform_id;
+    // u32 texture_id;
+    mat4 model_matrix;
+    mat4 view;
 } CameraPushConstant;
 
 typedef struct Camera {
@@ -15,7 +19,7 @@ typedef struct Camera {
 } Camera;
 
 Camera createCamera();
-CameraPushConstant getCameraPush(Camera camera);
+void getCameraMatrix(Camera camera, mat4 dest);
 void updateCamera(Camera* camera, Window window);
 
 #endif

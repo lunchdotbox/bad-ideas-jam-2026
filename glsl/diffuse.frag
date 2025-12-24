@@ -1,5 +1,6 @@
 #version 450
 #extension GL_EXT_nonuniform_qualifier : enable
+#include "push.glsl"
 
 layout(binding = 0) uniform sampler2D textures[];
 

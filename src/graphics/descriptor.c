@@ -123,3 +123,23 @@ u32 addDescriptorStorageBuffer(Device device, DeviceLoop* loop, VkBuffer buffer,
     setDescriptorStorageBuffer(device, loop, loop->set_indices[1], (VkDescriptorBufferInfo){.buffer = buffer, .offset = offset, .range = range});
     return loop->set_indices[1]++;
 }
+
+void setDescriptorUniformBuffer(Device device, DeviceLoop* loop, u32 index, VkDescriptorBufferInfo buffer) {
+    VkWriteDescriptorSet write = {
+        .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+        .pBufferInfo = &buffer,
+        .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+        .descriptorCount = 1,
+        .dstArrayElement = index,
+        .dstSet = loop->descriptor_sets[loop->frame],
+        .dstBinding = 2,
+    };
+
+    vkUpdateDescriptorSets(device.logical, 1, &write, 0, NULL);
+    loop->written = true;
+}
+
+u32 addDescriptorUniformBuffer(Device device, DeviceLoop* loop, VkBuffer buffer, VkDeviceSize offset, VkDeviceSize range) {
+    setDescriptorUniformBuffer(device, loop, loop->set_indices[2], (VkDescriptorBufferInfo){.buffer = buffer, .offset = offset, .range = range});
+    return loop->set_indices[2]++;
+}

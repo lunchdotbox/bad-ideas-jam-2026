@@ -33,7 +33,7 @@ VkDescriptorSet getLoopSet(DeviceLoop loop) {
 
 void propogateDescriptorWrites(Device device, DeviceLoop* loop) {
     if (loop->written) {
-        VkCopyDescriptorSet copies[2];
+        VkCopyDescriptorSet copies[3];
         for (u32 i = 0; i < ARRAY_LENGTH(copies); i++) // TODO: make a seperate written flag for each binding
             copies[i] = (VkCopyDescriptorSet){
                 .sType = VK_STRUCTURE_TYPE_COPY_DESCRIPTOR_SET,
