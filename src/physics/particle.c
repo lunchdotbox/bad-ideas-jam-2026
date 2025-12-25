@@ -60,7 +60,7 @@ void applyAngularImpulse(Particle* body, vec3 impulse) {
 
 void applyLinearImpulse(Particle* body, vec3 impulse) {
     if (body->mass == 0.0f) return;
-    glm_vec3_add(body->velocity, impulse, body->velocity);
+    glm_vec3_muladds(impulse, body->mass, body->velocity);
 }
 
 void applyGeneralImpulse(Particle* body, vec3 impulse, vec3 location) {
@@ -68,4 +68,9 @@ void applyGeneralImpulse(Particle* body, vec3 impulse, vec3 location) {
     vec3 contact, angular;
     glm_vec3_cross(location, impulse, angular);
     applyAngularImpulse(body, angular);
+}
+
+void applyParticleGravity(Particle* particle, float dt) {
+    if (particle->mass == 0.0f) return;
+    particle->velocity[1] += 9.8f * dt;
 }

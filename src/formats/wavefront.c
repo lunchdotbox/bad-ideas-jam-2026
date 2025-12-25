@@ -159,9 +159,9 @@ ELC_INLINE void addMeshQuad(HostMesh* mesh, VulkanVertex v_a, VulkanVertex v_b, 
 
 ELC_INLINE VulkanVertex indexToVertex(vec3s* positions, u32 n_positions, vec3s* normals, u32 n_normals, vec2s* uvs, u32 n_uvs, Index index) {
     return (VulkanVertex){
-        .position = VEC3_USE((index.position == 0) ? (vec3){NAN, NAN, NAN} : positions[index.position - 1].raw),
-        .normal = VEC3_USE((index.normal == 0) ? (vec3){NAN, NAN, NAN} : normals[index.normal - 1].raw),
-        .uv = VEC2_USE((index.texture == 0) ? (vec2){NAN, NAN} : uvs[index.texture - 1].raw),
+        .position = VEC3_USE(((index.position == 0) ? (vec3){NAN, NAN, NAN} : positions[index.position - 1].raw)),
+        .normal = VEC3_USE(((index.normal == 0) ? (vec3){NAN, NAN, NAN} : normals[index.normal - 1].raw)),
+        .uv = VEC2_USE(((index.texture == 0) ? (vec2){NAN, NAN} : uvs[index.texture - 1].raw)),
     };
 }
 

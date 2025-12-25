@@ -38,7 +38,7 @@ ELC_INLINE void findFurthestPoint(Particle* body, CollisionMesh mesh, vec3 direc
     }
 }
 
-ELC_INLINE SupportPoint calculateSupportPoint(Particle* body_a, CollisionMesh mesh_a, Particle* body_b, CollisionMesh mesh_b, vec3 direction) {
+ELC_INLINE SupportPoint calculateSupportPoint(Particle* body_a, CollisionMesh mesh_a, Particle* body_b, CollisionMesh mesh_b, vec3 direction) { // TODO: update to use center of mass
     SupportPoint result;
     vec3 internal_direction;
     glm_vec3_copy(direction, internal_direction);

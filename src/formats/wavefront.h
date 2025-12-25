@@ -14,7 +14,7 @@ typedef struct Face {
     Index indices[4];
 } Face;
 
-typedef struct HostMesh {
+typedef struct HostMesh { // TODO: move this to a seperate mesh utilities file
     VulkanVertex* vertices;
     u32* indices;
     u32 n_vertices, n_indices;

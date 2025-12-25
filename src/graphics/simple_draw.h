@@ -19,7 +19,7 @@ typedef struct DiffuseRenderer {
     u32 uniform_id;
 } DiffuseRenderer;
 
-DiffuseRenderer createDiffuseRenderer(Device device, DeviceLoop* loop, PipelineConfig config, u32 max_textures, u32 max_models);
+DiffuseRenderer createDiffuseRenderer(Device device, DeviceLoop* loop, PipelineConfig config);
 void destroyDiffuseRenderer(Device device, DiffuseRenderer renderer);
 void setRendererCamera(Device device, DiffuseRenderer renderer, Camera camera);
 void drawTexturedModel(VkCommandBuffer command, DiffuseRenderer renderer, Device device, Model model, u32 texture_id, mat4 transform);

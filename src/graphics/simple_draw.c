@@ -1,10 +1,9 @@
 #include "simple_draw.h"
 
-DiffuseRenderer createDiffuseRenderer(Device device, DeviceLoop* loop, PipelineConfig config, u32 max_textures, u32 max_models) {
+DiffuseRenderer createDiffuseRenderer(Device device, DeviceLoop* loop, PipelineConfig config) {
     DiffuseRenderer renderer;
     renderer.uniform = createUniformBuffer(device, sizeof(mat4));
     renderer.uniform_id = addDescriptorUniformBuffer(device, loop, renderer.uniform.buffer.buffer, 0, VK_WHOLE_SIZE);
-    config.polygon_mode = VK_POLYGON_MODE_LINE;
     setPipelineVertexShader(&config, createShaderModule(device, "spv/terrain.vert.spv"));
     setPipelineFragmentShader(&config, createShaderModule(device, "spv/diffuse.frag.spv"));
     renderer.pipeline = createPipeline(device, config);

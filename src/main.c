@@ -2,12 +2,17 @@
 #include "graphics/descriptor.h"
 #include "formats/wavefront.h"
 #include "graphics/uniform.h"
+#include "physics/constraints.h"
 #include "physics/mesh_inertia.h"
+#include "physics/particle.h"
+#include "physics/physics_scene.h"
 #include <GLFW/glfw3.h>
 #include <cglm/affine-pre.h>
 #include <cglm/affine2d.h>
 #include <cglm/io.h>
+#include <cglm/mat3.h>
 #include <cglm/mat4.h>
+#include <cglm/quat.h>
 #include <cglm/types.h>
 #include <elc/core.h>
 #include <vulkan/vulkan_core.h>
@@ -21,6 +26,7 @@
 #include "graphics/texture.h"
 #include "graphics/camera.h"
 #include "graphics/text.h"
+#include "graphics/simple_draw.h"
 
 int main() {
     glfwInit();
@@ -31,57 +37,61 @@ int main() {
     TextRenderer text_renderer = createTextRenderer(device, windowPipelineConfig(window));
     TextFont text_font = createTextFont(device, &window.device_loop, ELC_KILOBYTE, "images/fonts/minogram_6x10.png");
 
-    PipelineConfig pipeline_config = windowPipelineConfig(window);
-    // pipeline_config.polygon_mode = VK_POLYGON_MODE_LINE;
-    setPipelineVertexShader(&pipeline_config, createShaderModule(device, "spv/terrain.vert.spv"));
-    setPipelineFragmentShader(&pipeline_config, createShaderModule(device, "spv/diffuse.frag.spv"));
-    VkPipeline pipeline = createPipeline(device, pipeline_config);
+    DiffuseRenderer renderer = createDiffuseRenderer(device, &window.device_loop, windowPipelineConfig(window));
 
     Camera camera = createCamera();
     glfwSetInputMode(window.window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
-    HostMesh mesh = loadWavefront("models/cat.obj");
-    mat3 inertia;
-    vec3 com;
-    float mass;
-    computeMeshInertia(mesh, 1.0f, inertia, com, &mass);
-    glm_vec3_print(com, stdout);
+    PhysicsRenderer physics = createPhysicsRenderer(ELC_KILOBYTE, ELC_KILOBYTE);
 
+    Texture texture = loadTexture(device, &window.device_loop, QUEUE_TYPE_GRAPHICS, "images/2K/Poliigon_MetalSteelBrushed_7174_BaseColor.jpg");
+    u32 texture_id = addDescriptorTexture(device, &window.device_loop, SAMPLER_LINEAR, texture);
+
+    HostMesh mesh = loadWavefront("models/crankshaft.obj");
+    Particle particle = {.rotation = GLM_QUAT_IDENTITY_INIT, .velocity = {1.0f}};
+    vec3 mass_center;
+    computeMeshInertia(mesh, 1.0f, particle.inertia, mass_center, &particle.mass);
+    particle.position[1] = 0.0f;
+    shiftMeshBackwards(mesh, mass_center);
     Model model = hostMeshToModel(device, mesh);
     destroyHostMesh(mesh);
-    Texture texture = loadTexture(device, &window.device_loop, QUEUE_TYPE_GRAPHICS, "images/cat.png");
-    CameraPushConstant push;
-    glm_mat4_identity(push.model_matrix);
-    push.texture_id = addDescriptorTexture(device, &window.device_loop, SAMPLER_LINEAR, texture);
-    UniformBuffer uniform = createUniformBuffer(device, sizeof(mat4));
-    push.uniform_id = addDescriptorUniformBuffer(device, &window.device_loop, uniform.buffer.buffer, 0, VK_WHOLE_SIZE);
+    Particle crankshaft = particle;
+    Particle engine_base = {.position = {0.0f, 5.0f, 0.0f}, .mass = 0.0f, .inertia = GLM_MAT3_IDENTITY_INIT, .rotation = GLM_QUAT_IDENTITY_INIT};
+
+    // addPhysicsConstraint(&physics.scene, (BallJointConstraint){.particle_a = engine_base, .particle_b = crankshaft, .anchor_a = {0.0f, -5.0f, 0.0f}, .anchor_b = {0.0f, -mass_center[1], 0.0f}});
+
+    float last_physics_step = glfwGetTime();
 
     while (!glfwWindowShouldClose(window.window)) {
         glfwPollEvents();
 
         updateCamera(&camera, window);
+        last_physics_step = glfwGetTime();
+        stepPhysicsScene(physics.scene, 1.0 / 240.0, 1, 1);
+        applyParticleGravity(&engine_base, 1.0f / 240.0f);
+        applyParticleGravity(&crankshaft, 1.0f / 240.0f);
+        for (u32 i = 0; i < 1; i++) {
+            BallJoint constraint = createBallJoint(engine_base, crankshaft, (vec3){0.0f, -6.0f, 0.0f}, (vec3){0.0f, 0.0f, 0.0f}, 1.0f / 240.0f);
+            solveBallJoint(constraint, &engine_base, &crankshaft);
+        }
+        applyParticleVelocity(&engine_base, 1.0f / 240.0f);
+        applyParticleVelocity(&crankshaft, 1.0f / 240.0f);
+        glm_vec3_print(crankshaft.position, stdout);
 
         u32 image = beginWindowFrame(&window, device);
         beginWindowPass(window, image, (vec4){0.25f, 0.25f, 0.25f, 0.0f});
 
-        mat4 view_matrix;
-        getCameraMatrix(camera, view_matrix);
-        updateUniformBuffer(device, uniform, view_matrix, sizeof(view_matrix));
+        setRendererCamera(device, renderer, camera);
+        vkCmdBindPipeline(currentCommand(window), VK_PIPELINE_BIND_POINT_GRAPHICS, renderer.pipeline);
 
-        glm_mat4_identity(push.model_matrix);
-        commandPushConstants(currentCommand(window), device, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, sizeof(push), &push);
+        drawPhysicsRenderer(currentCommand(window), device, renderer, physics);
 
-        vkCmdBindPipeline(currentCommand(window), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+        mat4 transform;
+        glm_quat_mat4(crankshaft.rotation, transform);
+        glm_translate(transform, crankshaft.position);
+        drawTexturedModel(currentCommand(window), renderer, device, model, texture_id, transform);
 
-        drawModel(currentCommand(window), model);
-
-        glm_translate(push.model_matrix, com);
-        glm_scale(push.model_matrix, (vec3){0.1f, 0.1f, 0.1f});
-        commandPushConstants(currentCommand(window), device, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, sizeof(push), &push);
-
-        drawModel(currentCommand(window), model);
-
-        addTextPositioned(&text_font, (vec2){0}, (vec2){0.1f, 0.1f}, COLOR_RED, "deez");
+        // addTextPositioned(&text_font, (vec2){0}, (vec2){0.1f, 0.1f}, COLOR_RED, "deez");
         drawTextFont(currentCommand(window), device, text_renderer, &text_font, windowAspect(window));
 
         endWindowFrame(&window, device, image);
@@ -89,10 +99,10 @@ int main() {
 
     vkDeviceWaitIdle(device.logical);
 
-    destroyUniformBuffer(device, uniform);
+    destroyPhysicsRenderer(physics);
     destroyTexture(device, texture);
     destroyModel(device, model);
-    vkDestroyPipeline(device.logical, pipeline, NULL);
+    destroyDiffuseRenderer(device, renderer);
     destroyTextFont(device, text_font);
     destroyTextRenderer(device, text_renderer);
     destroyWindow(window, device, instance);
