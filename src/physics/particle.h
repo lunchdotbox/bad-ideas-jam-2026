@@ -12,6 +12,13 @@ typedef struct Particle {
     mat3 inertia;
 } Particle;
 
+typedef struct PhysicsComponent {
+    vec3 velocity;
+    float mass;
+    vec3 omega;
+    mat3 inertia;
+} PhysicsComponent;
+
 void inertiaTensorWorld(Particle particle, mat3 tensor);
 float getInertiaScalar(Particle particle, vec3 point, vec3 normal);
 void applyParticleVelocity(Particle* particle, float dt);

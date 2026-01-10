@@ -19,6 +19,11 @@ typedef struct DiffuseRenderer {
     u32 uniform_id;
 } DiffuseRenderer;
 
+typedef struct RenderedComponent {
+    Model* model;
+    u32 texture_id;
+} RenderedComponent;
+
 DiffuseRenderer createDiffuseRenderer(Device device, DeviceLoop* loop, PipelineConfig config);
 void destroyDiffuseRenderer(Device device, DiffuseRenderer renderer);
 void setRendererCamera(Device device, DiffuseRenderer renderer, Camera camera);
