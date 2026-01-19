@@ -52,8 +52,8 @@ void stepPhysicsScene(PhysicsScene scene, float dt, u32 iterations, u32 substeps
 
         for (u32 j = 0; j < iterations; j++) {
             for (u32 k = 0; k < scene.n_constraints; k++) {
-                BallJoint constraint = createBallJoint(*scene.constraints[k].particle_a, *scene.constraints[k].particle_b, scene.constraints[k].anchor_a, scene.constraints[k].anchor_b, dt);
-                solveBallJoint(constraint, scene.constraints[k].particle_a, scene.constraints[k].particle_b);
+                BallJoint constraint = createBallJoint(scene.particles[scene.constraints[k].particle_a], scene.particles[scene.constraints[k].particle_b], scene.constraints[k].anchor_a, scene.constraints[k].anchor_b, dt);
+                solveBallJoint(constraint, &scene.particles[scene.constraints[k].particle_a], &scene.particles[scene.constraints[k].particle_b]);
             }
         }
 

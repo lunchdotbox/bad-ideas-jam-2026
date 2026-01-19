@@ -17,7 +17,7 @@ typedef struct BallJoint {
 } BallJoint;
 
 typedef struct BallJointConstraint {
-    Particle* particle_a, *particle_b;
+    u32 particle_a, particle_b;
     vec3 anchor_a, anchor_b;
 } BallJointConstraint;
 

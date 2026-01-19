@@ -6,7 +6,6 @@
 #include "../graphics/model.h"
 #include <cglm/affine-pre.h>
 #include <cglm/quat.h>
-#include <stdlib.h>
 #include <vulkan/vulkan_core.h>
 #include "../graphics/simple_draw.h"
 

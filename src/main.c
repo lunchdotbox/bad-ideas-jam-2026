@@ -6,6 +6,7 @@
 #include "physics/mesh_inertia.h"
 #include "physics/particle.h"
 #include "physics/physics_scene.h"
+#include "physics/tubular_fluid.h"
 #include <GLFW/glfw3.h>
 #include <cglm/affine-pre.h>
 #include <cglm/affine2d.h>
@@ -15,6 +16,7 @@
 #include <cglm/quat.h>
 #include <cglm/types.h>
 #include <elc/core.h>
+#include <stdio.h>
 #include <vulkan/vulkan_core.h>
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE 1
 #define GLM_FORCE_RADIANS 1
@@ -28,6 +30,13 @@
 #include "graphics/simple_draw.h"
 
 int main() {
+    GasSystem gas_a = createGasSystem(10.0f, 100.0f, 10.0f, 10.0f, 10.0f, 1.0f, 0.0f, 5);
+    GasSystem gas_b = createGasSystem(5.0f, 100.0f, 10.0f, 10.0f, 10.0f, 1.0f, 0.0f, 5);
+
+    // for (u32 i = 0; i < 1000; i++) {
+    //     gasSystemFlow(&gas_a, &gas_b, (dvec2){1.0f, 0.0f}, 1.0f, 1.0f, 0.000001, 1.0f);
+    // }
+
     glfwInit();
     VkInstance instance = createInstance();
     Device device = createDevice(instance);
@@ -71,7 +80,9 @@ int main() {
         applyParticleVelocity(&engine_base, 1.0f / 2400.0f);
         applyParticleVelocity(&crankshaft, 1.0f / 2400.0f);
 
-        glm_vec3_print(crankshaft.position, stdout);
+        gasSystemFlow(&gas_a, &gas_b, (dvec2){1.0f, 0.0f}, 1.0f, 1.0f, 0.000001, 1.0f);
+
+        printf("pressure A: %f, pressure B: %f, total energy: %f\n", pressure(gas_a), pressure(gas_b), totalEnergy(gas_a) + totalEnergy(gas_b));
 
         u32 image = beginWindowFrame(&window, device);
         beginWindowPass(window, image, (vec4){0.25f, 0.25f, 0.25f, 0.0f});
