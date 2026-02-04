@@ -14,11 +14,6 @@
 #include "../physics/particle.h"
 #include "../graphics/simple_draw.h"
 
-#define INITIAL_ARCHETYPE_MAX_ENTITIES 128
-#define INITIAL_ENTITIES_MAX_ENTITIES 1024
-#define INITIAL_ENTITIES_BUCKETS 128
-#define ENTITIES_MAX_ARCHETYPES_PER_BUCKET 1
-
 typedef struct TransformComponent {
     versor rotation;
     vec3 position;
@@ -69,6 +64,7 @@ typedef struct Entities {
 } Entities;
 
 Entities createEntitySystem();
+void destroyEntitySystem(Entities entities);
 u32 createEntityUnsorted(Entities* entities, Component* components, u32 n_components, void** data);
 u32 createEntity(Entities* entities, Component* components, u32 n_components, void** data);
 void destroyEntity(Entities* entities, u32 id);

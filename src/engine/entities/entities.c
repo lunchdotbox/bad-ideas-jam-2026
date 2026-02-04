@@ -1,5 +1,14 @@
 #include "entities.h"
+
 #include <elc/core.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+#define INITIAL_ARCHETYPE_MAX_ENTITIES 128
+#define INITIAL_ENTITIES_MAX_ENTITIES 1024
+#define INITIAL_ENTITIES_BUCKETS 128
+#define ENTITIES_MAX_ARCHETYPES_PER_BUCKET 1
+#define INITIAL_BUCKET_LIST_MAX 16
 
 typedef struct EntityListsStart {
     u32 n_components;
@@ -11,9 +20,9 @@ typedef struct EntityListsStart {
 typedef struct ArchetypeBucket {
     u64 component_hashes[ENTITIES_MAX_ARCHETYPES_PER_BUCKET];
     void* archetype_data[ENTITIES_MAX_ARCHETYPES_PER_BUCKET];
-#if ENTITIES_MAX_ARCHETYPES_PER_BUCKET > 1
-    u8 n_archetypes;
-#endif
+    u64* component_hash_list;
+    void** archetype_data_list;
+    u32 n_archetypes, max_archetyps;
 } ArchetypeBucket;
 
 typedef struct EntityMapping {
@@ -21,20 +30,41 @@ typedef struct EntityMapping {
     u32 data_index;
 } EntityMapping;
 
-ELC_INLINE void zeroArchetypeBuckets(ArchetypeBucket* buckets, u32 n_buckets) {
-    #if ENTITIES_MAX_ARCHETYPES_PER_BUCKET > 1
-        for (u32 i = 0; i < n_buckets; i++) buckets[i].n_archetypes = 0;
-    #else
-        for (u32 i = 0; i < n_buckets; i++) buckets[i].archetype_data[0] = NULL;
-    #endif
-}
+typedef struct Archetype {
+    void* data;
+    u64 hash;
+} Archetype;
 
 Entities createEntitySystem() {
     Entities entities = {.max_entities = INITIAL_ENTITIES_MAX_ENTITIES, .n_buckets = INITIAL_ENTITIES_BUCKETS};
     entities.entities = malloc(entities.max_entities * sizeof(EntityMapping));
-    entities.buckets = malloc(entities.n_buckets * sizeof(ArchetypeBucket));
-    zeroArchetypeBuckets(entities.buckets, entities.n_buckets);
+    entities.buckets = calloc(entities.n_buckets, sizeof(ArchetypeBucket));
     return entities;
+}
+
+ELC_INLINE Archetype getBucketArchetype(ArchetypeBucket* bucket, u32 index) {
+    if (index < ENTITIES_MAX_ARCHETYPES_PER_BUCKET)
+        return (Archetype){.data = bucket->archetype_data[index], .hash = bucket->component_hashes[index]};
+    else {
+        u32 list_index = index - ENTITIES_MAX_ARCHETYPES_PER_BUCKET;
+        return (Archetype){.data = bucket->archetype_data_list[list_index], .hash = bucket->component_hash_list[list_index]};
+    }
+}
+
+void destroyEntitySystem(Entities entities) {
+    for (u32 i = 0; i < entities.n_buckets; i++) {
+        ArchetypeBucket* bucket = &entities.buckets[i];
+        for (u32 j = 0; j < bucket->n_archetypes; j++) {
+            Archetype archetype = getBucketArchetype(bucket, j);
+            EntityListsStart* start = archetype.data;
+            void** entity_list = archetype.data + sizeof(EntityListsStart) + (start->n_components * sizeof(Component));
+            for (u32 k = 0; k < start->n_components; k++) free(entity_list[k]);
+            free(start->entity_ids), free(archetype.data);
+        }
+        if (bucket->archetype_data_list != NULL) free(bucket->archetype_data_list), free(bucket->component_hash_list);
+    }
+
+    free(entities.buckets), free(entities.entities);
 }
 
 ELC_INLINE bool hasCorrectComponents(const Component* components_a, u32 n_components_a, const Component* components_b, u32 n_components_b) {
@@ -106,126 +136,112 @@ ELC_INLINE void createNewComponentList(Component* components, u32 n_components, 
     }
 }
 
+ELC_INLINE void addArchetype(ArchetypeBucket* bucket, void* data, u64 hash) {
+    if (bucket->n_archetypes < ENTITIES_MAX_ARCHETYPES_PER_BUCKET) {
+        bucket->archetype_data[bucket->n_archetypes] = data;
+        bucket->component_hashes[bucket->n_archetypes++] = hash;
+    } else {
+        if (bucket->archetype_data_list == NULL) {
+            bucket->max_archetyps = INITIAL_BUCKET_LIST_MAX;
+            bucket->archetype_data_list = malloc(bucket->max_archetyps * sizeof(void*));
+            bucket->component_hash_list = malloc(bucket->max_archetyps * sizeof(u64));
+        } else {
+            if ((bucket->n_archetypes - INITIAL_BUCKET_LIST_MAX) + 1 > bucket->max_archetyps) {
+                bucket->max_archetyps *= ELC_MATH_GOLDEN_RATIO;
+                bucket->archetype_data_list = realloc(bucket->archetype_data_list, bucket->max_archetyps * sizeof(void*));
+                bucket->component_hash_list = realloc(bucket->component_hash_list, bucket->max_archetyps * sizeof(u64));
+            }
+        }
+        bucket->archetype_data_list[bucket->n_archetypes - INITIAL_BUCKET_LIST_MAX] = data;
+        bucket->component_hash_list[bucket->n_archetypes++ - INITIAL_BUCKET_LIST_MAX] = hash;
+    }
+}
+
+ELC_INLINE void freeArchetypeMap(ArchetypeBucket* buckets, u32 n_buckets) {
+    for (u32 i = 0; i < n_buckets; i++) if (buckets->archetype_data_list != NULL) free(buckets->archetype_data_list), free(buckets->component_hash_list);
+
+    free(buckets);
+}
+
 ELC_INLINE void resizeArchetypeMap(Entities* entities, u32 n_buckets) {
-    begin: ArchetypeBucket* new_buckets = malloc(n_buckets * sizeof(ArchetypeBucket));
-    zeroArchetypeBuckets(new_buckets, n_buckets);
+    ArchetypeBucket* new_buckets = calloc(n_buckets, sizeof(ArchetypeBucket));
 
     for (u32 i = 0; i < entities->n_buckets; i++) {
         ArchetypeBucket* src = &entities->buckets[i];
-#if ENTITIES_MAX_ARCHETYPES_PER_BUCKET > 1
         for (u32 j = 0; j < src->n_archetypes; j++) {
-            u64 hash = src->component_hashes[j];
-            u32 index = hash % n_buckets;
+            Archetype archetype = getBucketArchetype(src, i);
+            u32 index = archetype.hash % n_buckets;
 
-            ArchetypeBucket* dst = &new_buckets[index];
-
-            if (dst->n_archetypes >= ENTITIES_MAX_ARCHETYPES_PER_BUCKET) {
-                free(new_buckets);
-                n_buckets *= ELC_MATH_GOLDEN_RATIO;
-                goto begin;
-            }
-
-            dst->component_hashes[dst->n_archetypes] = src->component_hashes[j];
-            dst->entity_lists[dst->n_archetypes] = src->entity_lists[j];
+            addArchetype(&new_buckets[index], archetype.data, archetype.hash);
         }
-#else
-        if (src->archetype_data[0] != NULL) {
-            u64 hash = src->component_hashes[0];
-            u32 index = hash % n_buckets;
-
-            ArchetypeBucket* dst = &new_buckets[index];
-
-            if (dst->archetype_data[0] != NULL) {
-                free(new_buckets);
-                n_buckets *= ELC_MATH_GOLDEN_RATIO;
-                goto begin;
-            }
-
-            dst->component_hashes[0] = src->component_hashes[0];
-            dst->archetype_data[0] = src->archetype_data[0];
-        }
-#endif
     }
+
+    freeArchetypeMap(entities->buckets, entities->n_buckets);
 
     entities->buckets = new_buckets;
     entities->n_buckets = n_buckets;
 }
 
-ELC_INLINE void* addArchetype(ArchetypeBucket* bucket, Component* components, u32 n_components, u64 hash, u32 max_entities) {
-#if ENTITIES_MAX_ARCHETYPES_PER_BUCKET > 1
-    u32 index = bucket->n_archetypes++;
-#else
-    u32 index = 0;
-#endif
-    bucket->component_hashes[index] = hash;
-    bucket->archetype_data[index] = malloc(sizeof(EntityListsStart) + (n_components * sizeof(Component)) + (n_components * sizeof(void*)));
-    void** entity_list = bucket->archetype_data[index] + sizeof(EntityListsStart) + (n_components * sizeof(Component));
+ELC_INLINE void* createArchetype(Component* components, u32 n_components, u32 max_entities) {
+    void* result = malloc(sizeof(EntityListsStart) + (n_components * sizeof(Component)) + (n_components * sizeof(void*)));
+    void** entity_list = result + sizeof(EntityListsStart) + (n_components * sizeof(Component));
+    *(EntityListsStart*)result = (EntityListsStart){.n_components = n_components, .max_entities = max_entities, .entity_ids = malloc(max_entities * sizeof(u32))};
     for (u32 i = 0; i < n_components; i++) entity_list[i] = malloc(max_entities * getComponentSize(components[i]));
-    *(EntityListsStart*)bucket->archetype_data[index] = (EntityListsStart){.n_components = n_components, .max_entities = max_entities, .entity_ids = malloc(max_entities * sizeof(u32))};
+    memcpy(result + sizeof(EntityListsStart), components, n_components * sizeof(Component));
 
-    return bucket->archetype_data[index];
+    return result;
+}
+
+ELC_INLINE void* createArchetypeWithNew(Component* components, u32 n_components, u32 max_entities, Component new) {
+    void* result = malloc(sizeof(EntityListsStart) + ((n_components + 1) * sizeof(Component)) + ((n_components + 1) * sizeof(void*)));
+    void** entity_list = result + sizeof(EntityListsStart) + ((n_components + 1) * sizeof(Component));
+    *(EntityListsStart*)result = (EntityListsStart){.n_components = n_components + 1, .max_entities = max_entities, .entity_ids = malloc(max_entities * sizeof(u32))};
+    for (u32 i = 0; i <= n_components; i++) {
+        if (i >= n_components) entity_list[i] = malloc(max_entities * getComponentSize(new));
+        else if (components[i] > new) {
+            entity_list[i] = malloc(max_entities * getComponentSize(new));
+            for (u32 j = 0; j < (n_components - 1) - i; j++) entity_list[i + j + 1] = malloc(max_entities * getComponentSize(components[i + j]));
+            break;
+        } else entity_list[i] = malloc(max_entities * getComponentSize(components[i]));
+    }
+    createNewComponentList(components, n_components, new, result + sizeof(EntityListsStart));
+    return result;
 }
 
 ELC_INLINE void* findNextArchetypeWithNew(Entities* entities, Component* components, u32 n_components, Component new) {
     u64 hash = hashComponentsWithNew(components, n_components, new);
-    begin: u32 index = hash % entities->n_buckets;
+    u32 index = hash % entities->n_buckets;
 
     ArchetypeBucket* bucket = &entities->buckets[index];
 
-#if ENTITIES_MAX_ARCHETYPES_PER_BUCKET > 1
     for (u32 i = 0; i < bucket->n_archetypes; i++) {
-#else
-    if (bucket->archetype_data[0] != NULL) {
-        u32 i = 0;
-#endif
-        EntityListsStart* start = bucket->archetype_data[i];
-        if (bucket->component_hashes[i] == hash && hasCorrectComponentsWithNew(bucket->archetype_data[i] + sizeof(EntityListsStart) + (start->n_components * sizeof(Component)), start->n_components, components, n_components, new))
-            return bucket->archetype_data[i];
+        Archetype archetype = getBucketArchetype(bucket, i);
+        EntityListsStart* start = archetype.data;
+        if (archetype.hash == hash && hasCorrectComponentsWithNew(archetype.data + sizeof(EntityListsStart) + (start->n_components * sizeof(Component)), start->n_components, components, n_components, new))
+            return archetype.data;
     }
 
-#if ENTITIES_MAX_ARCHETYPES_PER_BUCKET > 1
-    if (bucket->n_archetypes >= ENTITIES_MAX_ARCHETYPES_PER_BUCKET) {
-#else
-    if (bucket->archetype_data[0] != NULL) {
-#endif
-        resizeArchetypeMap(entities, entities->n_buckets * ELC_MATH_GOLDEN_RATIO);
-        goto begin;
-    }
-
-    void* archetype = addArchetype(bucket, components, n_components, hash, INITIAL_ARCHETYPE_MAX_ENTITIES);
-    createNewComponentList(components, n_components, new, archetype + sizeof(EntityListsStart));
+    void* archetype = createArchetypeWithNew(components, n_components, INITIAL_ARCHETYPE_MAX_ENTITIES, new);
+    addArchetype(bucket, archetype, hash);
 
     return archetype;
 }
 
 ELC_INLINE void* findNextArchetype(Entities* entities, Component* components, u32 n_components) {
     u64 hash = hashEntityComponents(components, n_components);
-    begin: u32 index = hash % entities->n_buckets;
+    u32 index = hash % entities->n_buckets;
 
     ArchetypeBucket* bucket = &entities->buckets[index];
 
-#if ENTITIES_MAX_ARCHETYPES_PER_BUCKET > 1
     for (u32 i = 0; i < bucket->n_archetypes; i++) {
-#else
-    if (bucket->archetype_data[0] != NULL) {
-        u32 i = 0;
-#endif
-        EntityListsStart* start = bucket->archetype_data[i];
-        if (bucket->component_hashes[i] == hash && hasCorrectComponents(bucket->archetype_data[i] + sizeof(EntityListsStart) + (start->n_components * sizeof(Component)), start->n_components, components, n_components))
-            return bucket->archetype_data[i];
+        Archetype archetype = getBucketArchetype(bucket, i);
+        EntityListsStart* start = archetype.data;
+        if (archetype.hash == hash && hasCorrectComponents(archetype.data + sizeof(EntityListsStart) + (start->n_components * sizeof(Component)), start->n_components, components, n_components))
+            return archetype.data;
     }
 
-#if ENTITIES_MAX_ARCHETYPES_PER_BUCKET > 1
-    if (bucket->n_archetypes >= ENTITIES_MAX_ARCHETYPES_PER_BUCKET) {
-#else
-    if (bucket->archetype_data[0] != NULL) {
-#endif
-        resizeArchetypeMap(entities, entities->n_buckets * ELC_MATH_GOLDEN_RATIO);
-        goto begin;
-    }
-
-    void* archetype = addArchetype(bucket, components, n_components, hash, INITIAL_ARCHETYPE_MAX_ENTITIES);
-    memcpy(archetype + sizeof(EntityListsStart), components, n_components * sizeof(Component));
+    void* archetype = createArchetype(components, n_components, INITIAL_ARCHETYPE_MAX_ENTITIES);
+    addArchetype(bucket, archetype, hash);
 
     return archetype;
 }

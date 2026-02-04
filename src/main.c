@@ -66,9 +66,11 @@ int main() {
 
     Entities entities = createEntitySystem();
 
-    u32 test_entity = createEntity(&entities, (Component[]){COMPONENT_TRANSFORM}, 1, NULL);
-    // addComponent(&entities, test_entity, COMPONENT_RENDERED, NULL);
+    u32 test_entity = createEntity(&entities, (Component[]){COMPONENT_TRANSFORM, COMPONENT_PHYSICS}, 2, (void*[]){&(TransformComponent){0}, &(PhysicsComponent){0}});
+    addComponent(&entities, test_entity, COMPONENT_RENDERED, &(RenderedComponent){.model = NULL});
     destroyEntity(&entities, test_entity);
+
+    destroyEntitySystem(entities);
 
     IntroCutscene intro = createIntroCutscene();
 
