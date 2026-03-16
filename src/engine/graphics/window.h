@@ -4,6 +4,8 @@
 #include "device.h"
 #include "device_loop.h"
 
+#include <cglm/cglm.h>
+
 typedef struct Window {
     GLFWwindow* window;
     VkSurfaceKHR surface;

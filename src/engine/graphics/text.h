@@ -5,11 +5,11 @@
 #include "device_loop.h"
 #include "color.h"
 #include "texture.h"
+#include "graphics_pipeline.h"
+
 #include <cglm/vec2.h>
-#include <elc/core.h>
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
-#include "graphics_pipeline.h"
 
 typedef enum TextIcon {TEXT_ICON_FULL = 0, TEXT_ICON_BOX, TEXT_ICON_CHECK, TEXT_ICON_CROSS} TextIcon;
 

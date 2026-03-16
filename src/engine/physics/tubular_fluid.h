@@ -3,9 +3,11 @@
 #ifndef ENGINE_PHYSICS_TUBULAR_FLUID_H
 #define ENGINE_PHYSICS_TUBULAR_FLUID_H
 
+#include "../utilities/integers.h"
+#include "../utilities/vector.h"
+
 #include <cglm/cglm.h>
 #include <cglm/util.h>
-#include <elc/core.h>
 
 typedef struct GasSystem {
     dvec2 momentum;

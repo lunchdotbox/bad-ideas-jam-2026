@@ -1,9 +1,10 @@
 #ifndef ENGINE_GRAPHICS_MODEL_H
 #define ENGINE_GRAPHICS_MODEL_H
 
-#include <elc/core.h>
 #include "device.h"
 #include "graphics_pipeline.h"
+
+#include <cglm/cglm.h>
 
 #define MODEL_PIPELINE_CONFIG ((PipelineConfig){\
     .primitive_topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,\

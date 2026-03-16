@@ -1,6 +1,6 @@
 #include "instance.h"
 
-#include <elc/core.h>
+#include "../utilities/integers.h"
 
 VkInstance createInstance() {
     u32 extension_count;

@@ -4,30 +4,30 @@
 #include "command.h"
 #include "graphics_pipeline.h"
 #include "texture.h"
-#include <elc/core.h>
-#include <vulkan/vulkan_core.h>
+#include "../utilities/inline.h"
+#include "../utilities/array.h"
 
-ELC_INLINE VkQueueFamilyProperties* getPhysicalDeviceQueueFamilyProperties(VkInstance instance, VkPhysicalDevice physical_device, u32* n_properties) {
+INLINE VkQueueFamilyProperties* getPhysicalDeviceQueueFamilyProperties(VkInstance instance, VkPhysicalDevice physical_device, u32* n_properties) {
     vkGetPhysicalDeviceQueueFamilyProperties(physical_device, n_properties, NULL);
     VkQueueFamilyProperties* properties = malloc(*n_properties * sizeof(VkQueueFamilyProperties));
     vkGetPhysicalDeviceQueueFamilyProperties(physical_device, n_properties, properties);
     return properties;
 }
 
-ELC_INLINE bool getPhysicalDeviceSupport(VkSurfaceKHR surface, VkPhysicalDevice device, u32 queue_family_index) {
+INLINE bool getPhysicalDeviceSupport(VkSurfaceKHR surface, VkPhysicalDevice device, u32 queue_family_index) {
     VkBool32 support;
     vkGetPhysicalDeviceSurfaceSupportKHR(device, queue_family_index, surface, &support);
     return support != VK_FALSE;
 }
 
-ELC_INLINE VkPhysicalDeviceFeatures getPhysicalDeviceFeatures(VkPhysicalDevice device) {
+INLINE VkPhysicalDeviceFeatures getPhysicalDeviceFeatures(VkPhysicalDevice device) {
     VkPhysicalDeviceFeatures result;
     vkGetPhysicalDeviceFeatures(device, &result);
 
     return result;
 }
 
-ELC_INLINE void pickPhysicalDevice(VkInstance instance, VkSurfaceKHR surface, Device* device) {
+INLINE void pickPhysicalDevice(VkInstance instance, VkSurfaceKHR surface, Device* device) {
     u32 n_physical_devices;
     vkEnumeratePhysicalDevices(instance, &n_physical_devices, NULL);
     VkPhysicalDevice* physical_devices = malloc(n_physical_devices * sizeof(VkPhysicalDevice));
@@ -84,7 +84,7 @@ ELC_INLINE void pickPhysicalDevice(VkInstance instance, VkSurfaceKHR surface, De
     device->physical = VK_NULL_HANDLE;
 }
 
-ELC_INLINE void createLogicalDevice(VkInstance instance, Device* device) {
+INLINE void createLogicalDevice(VkInstance instance, Device* device) {
     float queue_priorities[1] = {1.0f};
 
     VkDeviceQueueCreateInfo queue_create_infos[3] = {

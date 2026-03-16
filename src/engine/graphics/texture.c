@@ -5,6 +5,8 @@
 #include "../formats/stb_image.h"
 #include "device_loop.h"
 
+#include <memory.h>
+
 VkSampler createSampler(Device device, bool linear, VkCompareOp compare_op, VkSamplerAddressMode address_mode) {
     VkSamplerCreateInfo create_info = {
         .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,

@@ -1,5 +1,11 @@
 #include "collision.h"
 
+#include "../utilities/inline.h"
+#include "../utilities/integers.h"
+
+#include <cglm/struct.h>
+#include <memory.h>
+
 typedef struct SupportPoint {
     vec3 original_a;
     vec3 original_b;
@@ -19,12 +25,12 @@ typedef struct Edge {
     uint64_t a, b;
 } Edge;
 
-ELC_INLINE void bodySpaceToWorld(Particle* body, vec3 point, vec3 result) {
+INLINE void bodySpaceToWorld(Particle* body, vec3 point, vec3 result) {
     glm_quat_rotatev(body->rotation, point, result);
     glm_vec3_add(result, body->position, result);
 }
 
-ELC_INLINE void findFurthestPoint(Particle* body, CollisionMesh mesh, vec3 direction, vec3 result) {
+INLINE void findFurthestPoint(Particle* body, CollisionMesh mesh, vec3 direction, vec3 result) {
     float max_distance = -FLT_MAX; // sets the starting max distance to the lowest possible float so every distance is bigger
 
     for (uint64_t i = 0; i < mesh.n_points; i++) {
@@ -38,7 +44,7 @@ ELC_INLINE void findFurthestPoint(Particle* body, CollisionMesh mesh, vec3 direc
     }
 }
 
-ELC_INLINE SupportPoint calculateSupportPoint(Particle* body_a, CollisionMesh mesh_a, Particle* body_b, CollisionMesh mesh_b, vec3 direction) { // TODO: update to use center of mass
+INLINE SupportPoint calculateSupportPoint(Particle* body_a, CollisionMesh mesh_a, Particle* body_b, CollisionMesh mesh_b, vec3 direction) { // TODO: update to use center of mass
     SupportPoint result;
     vec3 internal_direction;
     glm_vec3_copy(direction, internal_direction);
@@ -49,7 +55,7 @@ ELC_INLINE SupportPoint calculateSupportPoint(Particle* body_a, CollisionMesh me
     return result;
 }
 
-ELC_INLINE bool checkLineWithOrigin(Simplex* points, vec3 direction) {
+INLINE bool checkLineWithOrigin(Simplex* points, vec3 direction) {
     vec3 ab, ao;
     glm_vec3_sub(points->points[1].minkowski, points->points[0].minkowski, ab);
     glm_vec3_negate_to(points->points[0].minkowski, ao);
@@ -65,7 +71,7 @@ ELC_INLINE bool checkLineWithOrigin(Simplex* points, vec3 direction) {
     return false;
 }
 
-ELC_INLINE bool checkTriangleWithOrigin(Simplex* points, vec3 direction) {
+INLINE bool checkTriangleWithOrigin(Simplex* points, vec3 direction) {
     vec3 ab, ac, ao, abc, abc_cross_ac, ab_cross_abc;
     glm_vec3_sub(points->points[1].minkowski, points->points[0].minkowski, ab);
     glm_vec3_sub(points->points[2].minkowski, points->points[0].minkowski, ac);
@@ -96,7 +102,7 @@ ELC_INLINE bool checkTriangleWithOrigin(Simplex* points, vec3 direction) {
     return false;
 }
 
-ELC_INLINE bool checkTetrahedronWithOrigin(Simplex* points, vec3 direction) {
+INLINE bool checkTetrahedronWithOrigin(Simplex* points, vec3 direction) {
     vec3 ab, ac, ad, ao, abc, acd, adb;
     glm_vec3_sub(points->points[1].minkowski, points->points[0].minkowski, ab);
     glm_vec3_sub(points->points[2].minkowski, points->points[0].minkowski, ac);
@@ -124,7 +130,7 @@ ELC_INLINE bool checkTetrahedronWithOrigin(Simplex* points, vec3 direction) {
     return true;
 }
 
-ELC_INLINE bool nextSimplex(Simplex* points, vec3 direction) {
+INLINE bool nextSimplex(Simplex* points, vec3 direction) {
     switch (points->n_points) {
         case 1: return checkLineWithOrigin(points, direction);
         case 2: return checkTriangleWithOrigin(points, direction);
@@ -134,7 +140,7 @@ ELC_INLINE bool nextSimplex(Simplex* points, vec3 direction) {
     return false;
 }
 
-ELC_INLINE void getFaceNormal(vec3 point_a, vec3 point_b, vec3 point_c, vec4 result) {
+INLINE void getFaceNormal(vec3 point_a, vec3 point_b, vec3 point_c, vec4 result) {
     vec3 ab, ac, normalized_result;
     glm_vec3_sub(point_b, point_a, ab);
     glm_vec3_sub(point_c, point_a, ac);
@@ -149,7 +155,7 @@ ELC_INLINE void getFaceNormal(vec3 point_a, vec3 point_b, vec3 point_c, vec4 res
     }
 }
 
-ELC_INLINE uint64_t getFaceNormals(SupportPoint* polytope, const Face* faces, uint64_t n_faces, vec4s* normals) {
+INLINE uint64_t getFaceNormals(SupportPoint* polytope, const Face* faces, uint64_t n_faces, vec4s* normals) {
     uint64_t min_triangle = 0;
     float min_distance = FLT_MAX;
 
@@ -167,7 +173,7 @@ ELC_INLINE uint64_t getFaceNormals(SupportPoint* polytope, const Face* faces, ui
     return min_triangle;
 }
 
-ELC_INLINE void addIfUniqueEdge(Edge* edges, uint64_t* n_edges, uint64_t face_a, uint64_t face_b) {
+INLINE void addIfUniqueEdge(Edge* edges, uint64_t* n_edges, uint64_t face_a, uint64_t face_b) {
     for (uint64_t i = 0; i < *n_edges; i++) {
         if (edges[i].a == face_b && edges[i].b == face_a) {
             for (uint64_t j = i; j < *n_edges - 1; j++) edges[j] = edges[j + 1];
@@ -181,7 +187,7 @@ ELC_INLINE void addIfUniqueEdge(Edge* edges, uint64_t* n_edges, uint64_t face_a,
     (*n_edges)++;
 }
 
-ELC_INLINE void triangleBarycentricOfOrigin(vec3 vertex_a, vec3 vertex_b, vec3 vertex_c, vec3 result) {
+INLINE void triangleBarycentricOfOrigin(vec3 vertex_a, vec3 vertex_b, vec3 vertex_c, vec3 result) {
     vec3 a, b, c, normal, a_cross_c, c_cross_b;
     glm_vec3_sub(vertex_b, vertex_a, a);
     glm_vec3_sub(vertex_c, vertex_a, b);
@@ -197,25 +203,25 @@ ELC_INLINE void triangleBarycentricOfOrigin(vec3 vertex_a, vec3 vertex_b, vec3 v
     result[0] = 1.0f - result[2] - result[1];
 }
 
-ELC_INLINE void lineBarycentricOfOrigin(vec3 vertex_a, vec3 vertex_b, vec2 result) {
+INLINE void lineBarycentricOfOrigin(vec3 vertex_a, vec3 vertex_b, vec2 result) {
     vec3 ab;
     glm_vec3_sub(vertex_b, vertex_a, ab);
     result[1] = -glm_dot(vertex_a, ab) / fabsf(glm_vec3_norm2(ab));
     result[0] = 1.0f - result[1];
 }
 
-ELC_INLINE void interpolatePositionOnTriangle(vec3 vertex_a, vec3 vertex_b, vec3 vertex_c, vec3 uvw, vec3 result) {
+INLINE void interpolatePositionOnTriangle(vec3 vertex_a, vec3 vertex_b, vec3 vertex_c, vec3 uvw, vec3 result) {
     glm_vec3_scale(vertex_a, uvw[0], result);
     glm_vec3_muladds(vertex_b, uvw[1], result);
     glm_vec3_muladds(vertex_c, uvw[2], result);
 }
 
-ELC_INLINE void interpolatePositionOnLine(vec3 vertex_a, vec3 vertex_b, vec2 uv, vec3 result) {
+INLINE void interpolatePositionOnLine(vec3 vertex_a, vec3 vertex_b, vec2 uv, vec3 result) {
     glm_vec3_scale(vertex_a, uv[0], result);
     glm_vec3_muladds(vertex_b, uv[1], result);
 }
 
-ELC_INLINE void completeCollisionResult(Particle* body_a, Particle* body_b, CollisionResult* result) {
+INLINE void completeCollisionResult(Particle* body_a, Particle* body_b, CollisionResult* result) {
     glm_vec3_sub(result->contact_b, result->contact_a, result->normal);
     glm_vec3_normalize(result->normal);
 
@@ -233,21 +239,21 @@ ELC_INLINE void completeCollisionResult(Particle* body_a, Particle* body_b, Coll
     result->body_b = body_b;
 }
 
-ELC_INLINE void collisionResultFromFace(SupportPoint point_a, SupportPoint point_b, SupportPoint point_c, CollisionResult* result) {
+INLINE void collisionResultFromFace(SupportPoint point_a, SupportPoint point_b, SupportPoint point_c, CollisionResult* result) {
     vec3 uvw;
     triangleBarycentricOfOrigin(point_a.minkowski, point_b.minkowski, point_c.minkowski, uvw);
     interpolatePositionOnTriangle(point_a.original_a, point_b.original_a, point_c.original_a, uvw, result->contact_a);
     interpolatePositionOnTriangle(point_a.original_b, point_b.original_b, point_c.original_b, uvw, result->contact_b);
 }
 
-ELC_INLINE void collisionResultFromEdge(SupportPoint point_a, SupportPoint point_b, CollisionResult* result) {
+INLINE void collisionResultFromEdge(SupportPoint point_a, SupportPoint point_b, CollisionResult* result) {
     vec2 uv;
     lineBarycentricOfOrigin(point_a.minkowski, point_b.minkowski, uv);
     interpolatePositionOnLine(point_a.original_a, point_b.original_a, uv, result->contact_a);
     interpolatePositionOnLine(point_a.original_b, point_b.original_b, uv, result->contact_b);
 }
 
-ELC_INLINE void collisionResultFromSimplex(Simplex* simplex, CollisionResult* result) {
+INLINE void collisionResultFromSimplex(Simplex* simplex, CollisionResult* result) {
     switch (simplex->n_points) {
         case 0:
             glm_vec3_copy(simplex->points[0].original_a, result->contact_a);
@@ -266,7 +272,7 @@ ELC_INLINE void collisionResultFromSimplex(Simplex* simplex, CollisionResult* re
     }
 }
 
-ELC_INLINE void expandingPolytopeAlgorithm(Simplex* simplex, Particle* body_a, CollisionMesh mesh_a, Particle* body_b, CollisionMesh mesh_b, CollisionResult* result) {
+INLINE void expandingPolytopeAlgorithm(Simplex* simplex, Particle* body_a, CollisionMesh mesh_a, Particle* body_b, CollisionMesh mesh_b, CollisionResult* result) {
     #define MAX_VERTICES (8 + 8 + 4)
     #define MAX_FACES (2 * (8 + 8))
     #define MAX_EDGES (MAX_VERTICES + MAX_FACES - 2)
@@ -382,7 +388,7 @@ ELC_INLINE void expandingPolytopeAlgorithm(Simplex* simplex, Particle* body_a, C
     result->body_b = body_b; // TODO: make sure reporting a collision without checking if penetration or normal is zero isnt causing problems
 }
 
-ELC_INLINE bool simplexContainsSupport(Simplex* simplex, SupportPoint* support) {
+INLINE bool simplexContainsSupport(Simplex* simplex, SupportPoint* support) {
     for (u8 i = 0; i <= simplex->n_points; i++) if (glm_vec3_eqv_eps(simplex->points[i].original_a, support->original_a) || glm_vec3_eqv_eps(simplex->points[i].original_b, support->original_b)) return true;
     return false;
 }
@@ -423,7 +429,7 @@ bool gilbertJohnsonKeerthi(Particle* body_a, CollisionMesh mesh_a, Particle* bod
     return false;
 }
 
-ELC_INLINE float fastestLinearSpeed(Particle* body, CollisionMesh mesh, vec3 direction) {
+INLINE float fastestLinearSpeed(Particle* body, CollisionMesh mesh, vec3 direction) {
     float max_speed = 0.0f;
     for (u64 i = 0; i < mesh.n_points; i++) {
         vec3 point, linear_velocity;

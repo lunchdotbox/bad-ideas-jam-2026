@@ -5,9 +5,12 @@
 #include "texture.h"
 #include "synchronization.h"
 #include "command.h"
-#include <math.h>
+#include "../utilities/comparison.h"
+#include "../utilities/inline.h"
+#include "../utilities/array.h"
+#include "../utilities/vector.h"
 
-ELC_INLINE void createSwapchain(Device device, VkExtent2D extent, Window* window) {
+INLINE void createSwapchain(Device device, VkExtent2D extent, Window* window) {
     VkSurfaceCapabilitiesKHR capabilities;
     vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device.physical, window->surface, &capabilities);
 

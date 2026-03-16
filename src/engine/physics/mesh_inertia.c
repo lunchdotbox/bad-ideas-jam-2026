@@ -1,22 +1,24 @@
 #include "mesh_inertia.h"
 
+#include "../utilities/inline.h"
+#include "../math/absolute.h"
+
 #include <cglm/mat3.h>
 #include <cglm/util.h>
-#include <elc/core.h>
 
-ELC_INLINE float computeInertiaMoment(vec3s p[3], u32 i) {
+INLINE float computeInertiaMoment(vec3s p[3], u32 i) {
     return (p[0].raw[i] * p[0].raw[i]) + (p[1].raw[i] * p[2].raw[i])
          + (p[1].raw[i] * p[1].raw[i]) + (p[0].raw[i] * p[2].raw[i])
          + (p[2].raw[i] * p[2].raw[i]) + (p[0].raw[i] * p[1].raw[i]);
 }
 
-ELC_INLINE float computeInertiaProduct(vec3s p[3], u32 i, u32 j) {
+INLINE float computeInertiaProduct(vec3s p[3], u32 i, u32 j) {
     return (2.0f * p[0].raw[i] * p[0].raw[j]) + (p[1].raw[i] * p[2].raw[j]) + (p[2].raw[i] * p[1].raw[j])
          + (2.0f * p[1].raw[i] * p[1].raw[j]) + (p[0].raw[i] * p[2].raw[j]) + (p[2].raw[i] * p[0].raw[j])
          + (2.0f * p[2].raw[i] * p[2].raw[j]) + (p[0].raw[i] * p[1].raw[j]) + (p[1].raw[i] * p[0].raw[j]);
 }
 
-ELC_INLINE float scalarTripleProduct(vec3 a, vec3 b, vec3 c) {
+INLINE float scalarTripleProduct(vec3 a, vec3 b, vec3 c) {
     vec3 temp;
     glm_vec3_cross(b, c, temp);
     return glm_vec3_dot(a, temp);

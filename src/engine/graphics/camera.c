@@ -1,6 +1,7 @@
 #include "camera.h"
 
 #include "window.h"
+#include "../utilities/comparison.h"
 
 Camera createCamera() {
     Camera camera = {0};

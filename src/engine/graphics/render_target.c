@@ -1,5 +1,6 @@
 #include "render_target.h"
 
+#include "../utilities/array.h"
 #include "device.h"
 
 VkFramebuffer createFramebuffer(Device device, VkRenderPass render_pass, VkImageView* attachments, u32 n_attachments, u32 width, u32 height, u32 layers) {

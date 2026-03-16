@@ -7,8 +7,8 @@
 #include "graphics_pipeline.h"
 #include "model.h"
 #include "uniform.h"
+
 #include <cglm/mat4.h>
-#include <vulkan/vulkan_core.h>
 
 typedef struct DiffuseRenderer {
     UniformBuffer uniform;

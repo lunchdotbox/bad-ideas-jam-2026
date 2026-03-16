@@ -3,7 +3,7 @@
 #include "device.h"
 #include "device_loop.h"
 #include "texture.h"
-#include <vulkan/vulkan_core.h>
+#include "../utilities/array.h"
 
 VkDescriptorPool createDescriptorPool(Device device, u32 set_count, u32 descriptor_count) {
     VkDescriptorPoolCreateInfo info = {

@@ -1,9 +1,11 @@
 #include "intro.h"
 
-#include <cglm/types.h>
-#include <elc/core.h>
-#include <stdint.h>
 #include "../../engine/math/transition.h"
+#include "../../engine/utilities/comparison.h"
+#include "../../engine/utilities/time.h"
+
+#include <cglm/types.h>
+#include <stdint.h>
 
 IntroCutscene createIntroCutscene() {
     return (IntroCutscene){.start_time = milliseconds()};

@@ -2,6 +2,7 @@
 
 #include "device.h"
 #include "window.h"
+#include "../utilities/file.h"
 
 VkPipelineLayout createPipelineLayout(Device device, u64 push_size, VkShaderStageFlags push_stage) {
     VkPushConstantRange push_constant_range = {
@@ -30,8 +31,7 @@ VkPipelineLayout createPipelineLayout(Device device, u64 push_size, VkShaderStag
 
 VkShaderModule createShaderModule(Device device, const char* file_path) {
     u32* code;
-    u64 code_size;
-    readFile(file_path, (u8**)&code, &code_size);
+    size_t code_size = readFile(file_path, (u8**)&code);
 
     VkShaderModuleCreateInfo create_info = {
         .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,

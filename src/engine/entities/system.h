@@ -1,8 +1,9 @@
 #include "entities.h"
-#include <elc/core.h>
+#include "../utilities/inline.h"
+#include "../utilities/empty.h"
 
 #ifndef _SYSTEM_COMPONENTS_MACRO
-#define _SYSTEM_COMPONENTS_MACRO X(COMPONENT_EMPTY, ELCEmptyStruct)
+#define _SYSTEM_COMPONENTS_MACRO X(COMPONENT_EMPTY, Empty)
 #endif
 
 #ifndef _SYSTEM_NAMING_MACRO
@@ -17,7 +18,7 @@ enum {
 };
 #undef X
 #define X(name, type) registerComponentReserved(entities, &reserved, sizeof(type));
-ELC_INLINE Component _SYSTEM_NAMING_MACRO(registerComponents)(Entities* entities) {
+INLINE Component _SYSTEM_NAMING_MACRO(registerComponents)(Entities* entities) {
     Component reserved = reserveComponents(entities, _SYSTEM_NAMING_MACRO(SYSTEM_COMPONENTS_MAX_ENUM_));
     _SYSTEM_COMPONENTS_MACRO
     return reserved;

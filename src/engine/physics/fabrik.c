@@ -1,5 +1,7 @@
 #include "fabrik.h"
 
+#include "../utilities/integers.h"
+
 void computeInverseKinematics(vec3s* positions, u32 n_positions, float* lengths, vec3 start, vec3 end, u32 iterations) {
     for (u32 i = 0; i < iterations; i++) {
         glm_vec3_copy(end, positions[n_positions - 1].raw);

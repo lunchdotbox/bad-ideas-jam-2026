@@ -1,5 +1,8 @@
 #include "simple_draw.h"
 
+#include "descriptor.h"
+#include "command.h"
+
 DiffuseRenderer createDiffuseRenderer(Device device, DeviceLoop* loop, PipelineConfig config) {
     DiffuseRenderer renderer;
     renderer.uniform = createUniformBuffer(device, sizeof(mat4));

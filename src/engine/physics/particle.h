@@ -1,7 +1,7 @@
 #ifndef ENGINE_PHYSICS_PARTICLE_H
 #define ENGINE_PHYSICS_PARTICLE_H
 
-#include <elc/core.h>
+#include <cglm/cglm.h>
 
 typedef struct Particle {
     vec3 position;

@@ -1,58 +1,61 @@
 /* this is a horrible terrible no good parser with so many issues and vulnerabilities.
- * please future me if you have more time update this to use a token based parser, please. */
+ * please future me if you have more time update this to use a token based parser, please do. */
 
 #include "wavefront.h"
+
+#include "../utilities/inline.h"
+#include "../utilities/vector.h"
+#include "../utilities/file.h"
 
 #include <cglm/io.h>
 #include <cglm/vec2-ext.h>
 #include <cglm/vec3-ext.h>
-#include <elc/core.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
-ELC_INLINE bool isWhiteSpace(char c) {
+INLINE bool isWhiteSpace(char c) {
     return c == '#' || c == '\n' || c == ' ' || c == '\t';
 }
 
-ELC_INLINE void skipWhiteSpace(char** data, size_t* n_data) {
+INLINE void skipWhiteSpace(char** data, size_t* n_data) {
     while (isWhiteSpace(**data) && *n_data > 0) {
         if (**data == '#') while (**data != '\n') (*data)++, (*n_data)--;
         (*data)++, (*n_data)--;
     }
 }
 
-ELC_INLINE float parseFloatingPoint(char** data, size_t* n_data) {
+INLINE float parseFloatingPoint(char** data, size_t* n_data) {
     size_t old_data = (size_t)*data;
     float result = strtof(*data, data);
     (*n_data) -= (size_t)(*data) - old_data;
     return result;
 }
 
-ELC_INLINE u64 parseUnsignedLong(char** data, size_t* n_data) {
+INLINE u64 parseUnsignedLong(char** data, size_t* n_data) {
     size_t old_data = (size_t)*data;
     u64 result = strtoull(*data, data, 10);
     (*n_data) -= (size_t)(*data) - old_data;
     return result;
 }
 
-ELC_INLINE bool expectCharacter(char** data, size_t* n_data, char c) {
+INLINE bool expectCharacter(char** data, size_t* n_data, char c) {
     bool result = **data != c;
     (*data)++, (*n_data)--;
     return result;
 }
 
-ELC_INLINE bool expectWhiteSpace(char** data, size_t* n_data) {
+INLINE bool expectWhiteSpace(char** data, size_t* n_data) {
     bool result = !isWhiteSpace(**data);
     (*data)++, (*n_data)--;
     return result;
 }
 
-ELC_INLINE bool isNumber(char c) {
+INLINE bool isNumber(char c) {
     return c == '0' || c == '1' || c == '2' || c == '3' || c == '4' || c == '5' || c == '6' || c == '7' || c == '8' || c == '9';
 }
 
-ELC_INLINE char* nextNonWhitespace(char* data) {
+INLINE char* nextNonWhitespace(char* data) {
     while (isWhiteSpace(*data)) data++;
     return data;
 }
@@ -127,17 +130,17 @@ void parseWavefrontFaces(char* data, size_t n_data, vec3s* positions, u32* n_pos
     }
 }
 
-ELC_INLINE bool isVertexEqual(VulkanVertex a, VulkanVertex b) {
+INLINE bool isVertexEqual(VulkanVertex a, VulkanVertex b) {
     return glm_vec3_eqv_eps(a.position, b.position) && glm_vec3_eqv_eps(a.normal, b.normal) && glm_vec2_eqv_eps(a.uv, b.uv);
 }
 
-ELC_INLINE u32 findDuplicateVertex(HostMesh mesh, VulkanVertex vertex) {
+INLINE u32 findDuplicateVertex(HostMesh mesh, VulkanVertex vertex) {
     if (mesh.n_vertices == 0) return UINT32_MAX;
     for (u32 i = mesh.n_vertices - 1; i != 0; i--) if (isVertexEqual(mesh.vertices[i], vertex)) return i;
     return UINT32_MAX;
 }
 
-ELC_INLINE void addMeshVertex(HostMesh* mesh, VulkanVertex vertex) {
+INLINE void addMeshVertex(HostMesh* mesh, VulkanVertex vertex) {
     vertex.position[1] *= -1.0f;
     if (mesh->vertices != NULL) {
         u32 duplicate = findDuplicateVertex(*mesh, vertex);
@@ -149,15 +152,15 @@ ELC_INLINE void addMeshVertex(HostMesh* mesh, VulkanVertex vertex) {
     mesh->n_indices++;
 }
 
-ELC_INLINE void addMeshTriangle(HostMesh* mesh, VulkanVertex v_a, VulkanVertex v_b, VulkanVertex v_c){
+INLINE void addMeshTriangle(HostMesh* mesh, VulkanVertex v_a, VulkanVertex v_b, VulkanVertex v_c){
     addMeshVertex(mesh, v_a), addMeshVertex(mesh, v_b), addMeshVertex(mesh, v_c);
 }
 
-ELC_INLINE void addMeshQuad(HostMesh* mesh, VulkanVertex v_a, VulkanVertex v_b, VulkanVertex v_c, VulkanVertex v_d) {
+INLINE void addMeshQuad(HostMesh* mesh, VulkanVertex v_a, VulkanVertex v_b, VulkanVertex v_c, VulkanVertex v_d) {
     addMeshTriangle(mesh, v_a, v_b, v_c), addMeshTriangle(mesh, v_c, v_d, v_a);
 }
 
-ELC_INLINE VulkanVertex indexToVertex(vec3s* positions, u32 n_positions, vec3s* normals, u32 n_normals, vec2s* uvs, u32 n_uvs, Index index) {
+INLINE VulkanVertex indexToVertex(vec3s* positions, u32 n_positions, vec3s* normals, u32 n_normals, vec2s* uvs, u32 n_uvs, Index index) {
     return (VulkanVertex){
         .position = VEC3_USE(((index.position == 0) ? (vec3){NAN, NAN, NAN} : positions[index.position - 1].raw)),
         .normal = VEC3_USE(((index.normal == 0) ? (vec3){NAN, NAN, NAN} : normals[index.normal - 1].raw)),
@@ -165,7 +168,7 @@ ELC_INLINE VulkanVertex indexToVertex(vec3s* positions, u32 n_positions, vec3s* 
     };
 }
 
-ELC_INLINE bool isFaceQuad(Face face) {
+INLINE bool isFaceQuad(Face face) {
     return face.indices[3].normal != 0 || face.indices[3].position != 0 || face.indices[3].texture != 0;
 }
 

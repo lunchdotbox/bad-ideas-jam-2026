@@ -3,6 +3,9 @@
 
 #include "../graphics/device.h"
 #include "../graphics/model.h"
+#include "../utilities/integers.h"
+
+#include <cglm/struct.h>
 
 typedef struct Index {
     u32 position;

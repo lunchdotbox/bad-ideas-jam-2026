@@ -1,6 +1,8 @@
 #include "tubular_fluid.h"
 
-#include <elc/core.h>
+#include "../utilities/integers.h"
+#include "../utilities/comparison.h"
+#include "../math/power.h"
 
 static const double gas_system_r = 8.31446261815324;
 static const double gas_system_kg = 1.0;
@@ -300,8 +302,8 @@ double gasSystemLoseN(GasSystem* gas, double dn, double epm) {
     double c_dst = gasSystemC(*dst);
 
     dvec2 initial_momentum_src, initial_momentum_dst;
-    elc_dvec2_copy(src->momentum, initial_momentum_src);
-    elc_dvec2_copy(dst->momentum, initial_momentum_dst);
+    dvec2_copy(src->momentum, initial_momentum_src);
+    dvec2_copy(dst->momentum, initial_momentum_dst);
 
     if (area_dst != 0.0) updateFractionMomentum(dst, dir, area_dst, fract_mass, fract_vol, c_dst, dt);
     if (area_src != 0.0 && mass_src != 0.0) updateFractionMomentum(src, dir, area_src, fract_mass, fract_vol, c_src, dt);

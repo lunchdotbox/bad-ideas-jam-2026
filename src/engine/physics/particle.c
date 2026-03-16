@@ -1,4 +1,7 @@
 #include "particle.h"
+
+#include "../utilities/vector.h"
+
 #include <cglm/mat3.h>
 
 void inertiaTensorWorld(Particle particle, mat3 tensor) {
@@ -39,7 +42,7 @@ void applyParticleVelocity(Particle* particle, float dt) {
     vec3 axis;
     glm_vec3_scale(particle->omega, dt * 0.5f, axis);
     if (!glm_vec3_eq_eps(axis, 0.0f)) {
-        versor rotation = {VEC3_SPLIT(axis), 0.0f};
+        versor rotation = VEC3_USE(axis);
         glm_quat_mul(rotation, particle->rotation, rotation);
         glm_quat_add(particle->rotation, rotation, particle->rotation);
         glm_quat_normalize(particle->rotation);

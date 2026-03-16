@@ -1,7 +1,8 @@
 #ifndef ENGINE_GRAPHICS_COLOR_H
 #define ENGINE_GRAPHICS_COLOR_H
 
-#include <elc/core.h>
+#include "../utilities/integers.h"
+#include "../utilities/inline.h"
 
 typedef struct Color {
     u8 r, g, b, a;
@@ -46,14 +47,14 @@ typedef enum ColorID {
 } ColorID;
 #undef X
 #define X(id, name, ...) case COLOR_ID_##id: return COLOR_##id;
-ELC_INLINE Color colorFromColorID(ColorID id) {
+INLINE Color colorFromColorID(ColorID id) {
     switch (id) {
         _COLORS_MACRO
     }
 }
 #undef X
 #define X(id, name, ...) case COLOR_ID_##id: return name;
-ELC_INLINE const char* nameFromColorID(ColorID id) {
+INLINE const char* nameFromColorID(ColorID id) {
     switch (id) {
         _COLORS_MACRO
     }
@@ -61,7 +62,7 @@ ELC_INLINE const char* nameFromColorID(ColorID id) {
 #undef X
 #undef _COLORS_MACRO
 
-ELC_INLINE Color changeAlpha(Color color, u8 alpha) {
+INLINE Color changeAlpha(Color color, u8 alpha) {
     return (Color){color.r, color.g, color.b, alpha};
 }
 

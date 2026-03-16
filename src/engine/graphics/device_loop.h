@@ -3,6 +3,8 @@
 
 #include "device.h"
 
+#include <stdbool.h>
+
 #define FRAMES_IN_FLIGHT 2
 
 typedef struct DeviceLoop {

@@ -1,7 +1,10 @@
-#include <elc/core.h>
+#include "miniaudio.h"
+#include "../utilities/inline.h"
+#include "../utilities/array.h"
+
 #include <stddef.h>
 #include <string.h>
-#include "miniaudio.h"
+#include <stdio.h>
 
 #ifndef _SOUNDS_MACRO
 #define _SOUNDS_MACRO
@@ -26,7 +29,7 @@ typedef struct _SOUNDS_NAMING_MACRO(Sounds) {
     memcpy(&path[n_base_path + n_sound_name], file_extension, n_file_extension * sizeof(char));\
     path[ARRAY_LENGTH(path) - 1] = '\0';\
     if (ma_sound_init_from_file(&sounds->engine, path, 0, NULL, NULL, &sounds->sound_name) != MA_SUCCESS) printf("failed to load sound %s from file %s\n", #sound_name, path);}
-ELC_INLINE void _SOUNDS_NAMING_MACRO(loadSounds)(_SOUNDS_NAMING_MACRO(Sounds)* sounds, const char* base_path) {
+INLINE void _SOUNDS_NAMING_MACRO(loadSounds)(_SOUNDS_NAMING_MACRO(Sounds)* sounds, const char* base_path) {
     const char* file_extension = ".wav";
     size_t n_file_extension = strlen(file_extension);
     if (ma_engine_init(NULL, &sounds->engine) != MA_SUCCESS) puts("failed to initialize audio engine");
@@ -35,7 +38,7 @@ ELC_INLINE void _SOUNDS_NAMING_MACRO(loadSounds)(_SOUNDS_NAMING_MACRO(Sounds)* s
 }
 #undef X
 #define X(sound_name) ma_sound_uninit(&sounds->sound_name);
-ELC_INLINE void _SOUNDS_NAMING_MACRO(unloadSounds)(_SOUNDS_NAMING_MACRO(Sounds)* sounds) {
+INLINE void _SOUNDS_NAMING_MACRO(unloadSounds)(_SOUNDS_NAMING_MACRO(Sounds)* sounds) {
     _SOUNDS_MACRO
     ma_engine_uninit(&sounds->engine);
 }
@@ -47,13 +50,13 @@ ELC_INLINE void _SOUNDS_NAMING_MACRO(unloadSounds)(_SOUNDS_NAMING_MACRO(Sounds)*
 #ifndef ENGINE_AUDIO_SOUNDS_H
 #define ENGINE_AUDIO_SOUNDS_H
 
-ELC_INLINE float getSoundLength(const ma_sound* sound) {
+INLINE float getSoundLength(const ma_sound* sound) {
     float length;
     ma_sound_get_length_in_seconds(sound, &length);
     return length;
 }
 
-ELC_INLINE float getSoundCursor(const ma_sound* sound) {
+INLINE float getSoundCursor(const ma_sound* sound) {
     float cursor;
     ma_sound_get_cursor_in_seconds(sound, &cursor);
     return cursor;

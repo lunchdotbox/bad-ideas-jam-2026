@@ -1,5 +1,6 @@
 #include "constraints.h"
-#include <elc/core.h>
+
+#include "../utilities/inline.h"
 
 BallJoint createBallJoint(Particle body_a, Particle body_b, vec3 anchor_a, vec3 anchor_b, float dt) {
     BallJoint joint;
@@ -38,7 +39,7 @@ BallJoint createBallJoint(Particle body_a, Particle body_b, vec3 anchor_a, vec3 
     return joint;
 }
 
-ELC_INLINE float constraintRelativeVelocity(Constraint c, Particle body_a, Particle body_b) {
+INLINE float constraintRelativeVelocity(Constraint c, Particle body_a, Particle body_b) {
     return glm_vec3_dot(c.linear_a, body_a.velocity) + glm_vec3_dot(c.angular_a, body_a.omega) + glm_vec3_dot(c.linear_b, body_b.velocity) + glm_vec3_dot(c.angular_b, body_b.omega);
 }
 

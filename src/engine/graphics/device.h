@@ -1,7 +1,8 @@
 #ifndef ENGINE_GRAPHICS_DEVICE_H
 #define ENGINE_GRAPHICS_DEVICE_H
 
-#include <elc/core.h>
+#include "../utilities/integers.h"
+
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 

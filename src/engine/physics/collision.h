@@ -2,7 +2,8 @@
 #define ENGINE_PHYSICS_COLLISION_H
 
 #include "particle.h"
-#include <elc/core.h>
+
+#include <cglm/struct.h>
 
 typedef struct CollisionMesh {
     vec3s* points;

@@ -4,8 +4,7 @@
 #include "descriptor.h"
 #include "command.h"
 #include "synchronization.h"
-#include <elc/core.h>
-#include <vulkan/vulkan_core.h>
+#include "../utilities/array.h"
 
 DeviceLoop createDeviceLoop(Device device, QueueType type) {
     DeviceLoop loop = {0};

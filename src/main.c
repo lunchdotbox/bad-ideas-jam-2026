@@ -1,12 +1,9 @@
 #include "engine/entities/entities.h"
-#include "engine/graphics/command.h"
 #include "engine/graphics/descriptor.h"
 #include "engine/formats/wavefront.h"
-#include "engine/graphics/uniform.h"
 #include "engine/physics/constraints.h"
 #include "engine/physics/mesh_inertia.h"
 #include "engine/physics/particle.h"
-#include "engine/physics/tubular_fluid.h"
 #include "game/cutscenes/intro.h"
 #include <GLFW/glfw3.h>
 #include <cglm/affine-pre.h>
@@ -16,8 +13,6 @@
 #include <cglm/mat4.h>
 #include <cglm/quat.h>
 #include <cglm/types.h>
-#include <elc/core.h>
-#include <stdio.h>
 #include <vulkan/vulkan_core.h>
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE 1
 #define GLM_FORCE_RADIANS 1
@@ -29,6 +24,8 @@
 #include "engine/graphics/camera.h"
 #include "engine/graphics/text.h"
 #include "engine/graphics/simple_draw.h"
+#include "engine/utilities/time.h"
+#include "engine/math/constants.h"
 
 int main() {
     glfwInit();
@@ -37,7 +34,7 @@ int main() {
     Window window = createWindow(device, instance, 800, 600, "vulkan renderer");
 
     TextRenderer text_renderer = createTextRenderer(device, windowPipelineConfig(window));
-    TextFont text_font = createTextFont(device, &window.device_loop, ELC_KILOBYTE, "images/fonts/minogram_6x10.png");
+    TextFont text_font = createTextFont(device, &window.device_loop, KILOBYTE, "images/fonts/minogram_6x10.png");
 
     DiffuseRenderer renderer = createDiffuseRenderer(device, &window.device_loop, windowPipelineConfig(window));
 

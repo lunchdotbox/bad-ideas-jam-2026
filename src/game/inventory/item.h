@@ -1,7 +1,8 @@
 #ifndef ITEM_H
 #define ITEM_H
 
-#include <elc/core.h>
+#include "../../engine/utilities/integers.h"
+#include "../../engine/utilities/inline.h"
 
 #undef _ITEMS_MACRO
 #define _ITEMS_MACRO\
@@ -56,7 +57,7 @@ enum {
 };
 #undef X
 #define X(id, max_stack, name, description, quote) case ITEM_TYPE_##id: return (ItemTypeInfo){name, description, quote, max_stack};
-ELC_INLINE ItemTypeInfo getItemTypeInfo(ItemType type) {
+INLINE ItemTypeInfo getItemTypeInfo(ItemType type) {
     switch (type) {
         _ITEMS_MACRO
     }

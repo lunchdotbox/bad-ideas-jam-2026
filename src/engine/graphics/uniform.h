@@ -3,7 +3,7 @@
 
 #include "buffer.h"
 #include "device.h"
-#include <elc/core.h>
+
 #include <vulkan/vulkan_core.h>
 
 typedef struct UniformBuffer {

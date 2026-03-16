@@ -2,7 +2,6 @@
 #define ENGINE_ENTITIES_ENTITIES_H
 
 #include <cglm/io.h>
-#include <elc/core.h>
 #include <endian.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -11,8 +10,7 @@
 #include <unistd.h>
 #include <vulkan/vulkan_core.h>
 
-#include "../physics/particle.h"
-#include "../graphics/simple_draw.h"
+#include "../utilities/integers.h"
 
 typedef u32 Component;
 typedef u32 Entity;

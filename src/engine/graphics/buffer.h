@@ -3,6 +3,8 @@
 
 #include "device.h"
 
+#include <stdbool.h>
+
 typedef struct ValidBuffer {
     VkBuffer buffer;
     VkDeviceMemory memory;
