@@ -121,7 +121,7 @@ void destroyEntitySystem(Entities* entities) {
             ArchetypeCacheStart* start = entry.entry;
             free(start->archetypes), free(entry.entry);
         }
-        free(bucket->entries);
+        free(bucket->entry_list);
     }
 
     for (u32 i = 0; i < entities->n_components; i++) free(entities->components[i].archetypes);

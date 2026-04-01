@@ -2,7 +2,6 @@
 #define ENGINE_PHYSICS_MESH_INERTIA_H
 
 #include "../formats/wavefront.h"
-#include "particle.h"
 #include <cglm/mat3.h>
 #include <cglm/util.h>
 #include <cglm/vec3.h>
