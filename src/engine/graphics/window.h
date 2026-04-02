@@ -17,9 +17,9 @@ typedef struct Window {
     VkDeviceMemory* depth_memories;
     VkFramebuffer* framebuffers;
     VkSemaphore* render_semaphores;
-    DeviceLoop device_loop;
+    DeviceLoop loop;
     u32 image_count;
-    bool is_resized;
+    bool* resized;
 } Window;
 
 Window createWindow(Device device, VkInstance instance, int width, int height, const char* title);

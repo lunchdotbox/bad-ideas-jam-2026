@@ -3,7 +3,7 @@
 # Compiler and flags
 CC = gcc
 CFLAGS = -std=c11 -Iinclude -g
-LDFLAGS = -Lexternal -lglfw3 -lvulkan -lm -g
+LDFLAGS = -lglfw -lvulkan -lm -g
 
 # GLSL compiler
 GLSLC = glslc

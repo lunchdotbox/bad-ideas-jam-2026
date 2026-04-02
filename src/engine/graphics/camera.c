@@ -3,10 +3,14 @@
 #include "window.h"
 #include "../utilities/comparison.h"
 
-Camera createCamera() {
+Camera createCamera(Window window) {
     Camera camera = {0};
-    glm_perspective_rh_no(GLM_PI / 4.0f, 800.0f / 600.0f, 0.01f, 1000.0f, camera.projection);
+    glm_perspective_rh_no(GLM_PI / 4.0f, windowAspect(window), 0.01f, 1000.0f, camera.projection);
     return camera;
+}
+
+void recreateCamera(Camera* camera, Window window) {
+    glm_perspective_rh_no(GLM_PI / 4.0f, windowAspect(window), 0.01f, 1000.0f, camera->projection);
 }
 
 void getCameraMatrix(Camera camera, mat4 dest) {

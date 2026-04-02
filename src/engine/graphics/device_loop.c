@@ -48,10 +48,10 @@ void propogateDescriptorWrites(Device device, DeviceLoop* loop) {
     loop->written = false;
 }
 
-void beginDeviceLoop(Device device, DeviceLoop* loop) {
+void beginDeviceLoop(Device device, DeviceLoop* loop, bool reset) {
     vkWaitForFences(device.logical, 1, &loop->fences[loop->frame], VK_TRUE, UINT64_MAX);
     propogateDescriptorWrites(device, loop);
-    vkResetFences(device.logical, 1, &loop->fences[loop->frame]);
+    if (reset) vkResetFences(device.logical, 1, &loop->fences[loop->frame]);
 }
 
 VkSemaphore getLoopSemaphore(DeviceLoop loop) {

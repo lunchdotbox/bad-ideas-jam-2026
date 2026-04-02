@@ -17,7 +17,8 @@ typedef struct Camera {
     mat4 projection;
 } Camera;
 
-Camera createCamera();
+Camera createCamera(Window window);
+void recreateCamera(Camera* camera, Window window);
 void getCameraMatrix(Camera camera, mat4 dest);
 void updateCamera(Camera* camera, Window window);
 

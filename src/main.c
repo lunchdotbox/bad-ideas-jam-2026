@@ -13,6 +13,7 @@
 #include <cglm/mat4.h>
 #include <cglm/quat.h>
 #include <cglm/types.h>
+#include <vulkan/vulkan_core.h>
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE 1
 #define GLM_FORCE_RADIANS 1
 #include "engine/graphics/instance.h"
@@ -33,15 +34,15 @@ int main() {
     Window window = createWindow(device, instance, 800, 600, "vulkan renderer");
 
     TextRenderer text_renderer = createTextRenderer(device, windowPipelineConfig(window));
-    TextFont text_font = createTextFont(device, &window.device_loop, KILOBYTE, "images/fonts/minogram_6x10.png");
+    TextFont text_font = createTextFont(device, &window.loop, KILOBYTE, "images/fonts/minogram_6x10.png");
 
-    DiffuseRenderer renderer = createDiffuseRenderer(device, &window.device_loop, windowPipelineConfig(window));
+    DiffuseRenderer renderer = createDiffuseRenderer(device, &window.loop, windowPipelineConfig(window));
 
-    Camera camera = createCamera();
-    glfwSetInputMode(window.window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    Camera camera = createCamera(window);
+    // glfwSetInputMode(window.window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
-    Texture texture = loadTexture(device, &window.device_loop, QUEUE_TYPE_GRAPHICS, "images/2K/Poliigon_MetalSteelBrushed_7174_BaseColor.jpg");
-    u32 texture_id = addDescriptorTexture(device, &window.device_loop, SAMPLER_LINEAR, texture);
+    Texture texture = loadTexture(device, &window.loop, QUEUE_TYPE_GRAPHICS, "images/2K/Poliigon_MetalSteelBrushed_7174_BaseColor.jpg");
+    u32 texture_id = addDescriptorTexture(device, &window.loop, SAMPLER_LINEAR, texture);
 
     HostMesh mesh = loadWavefront("models/crankshaft.obj");
     Particle particle = {.rotation = GLM_QUAT_IDENTITY_INIT, .velocity = {1.0f}};
@@ -91,11 +92,15 @@ int main() {
         glm_quat_rotate(transform, crankshaft.rotation, transform);
         drawTexturedModel(currentCommand(window), renderer, device, model, texture_id, transform);
 
-        tickIntroCutscene(&intro, &text_font, &sounds, ct);
-
+        // tickIntroCutscene(&intro, &text_font, &sounds, ct);
         drawTextFont(currentCommand(window), device, text_renderer, &text_font, windowAspect(window));
 
         endWindowFrame(&window, device, image);
+
+        if (isWindowResized(&window, device)) {
+            recreateCamera(&camera, window);
+            recreateDiffuseRenderer(device, &renderer, windowPipelineConfig(window));
+        }
     }
 
     vkDeviceWaitIdle(device.logical);

@@ -12,7 +12,7 @@
 #include <GLFW/glfw3.h>
 #include <vulkan/vulkan_core.h>
 
-INLINE void createSwapchain(Device device, VkExtent2D extent, Window* window, bool create_render_pass) {
+INLINE void createSwapchain(Device device, VkExtent2D extent, Window* window, bool create_extra, VkSwapchainKHR old_swapchain) {
     VkSurfaceCapabilitiesKHR capabilities;
     vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device.physical, window->surface, &capabilities);
 
@@ -74,6 +74,7 @@ INLINE void createSwapchain(Device device, VkExtent2D extent, Window* window, bo
         .pQueueFamilyIndices = queue_family_indices,
         .imageArrayLayers = 1,
         .imageExtent = window->extent,
+        .oldSwapchain = old_swapchain,
     };
 
     // incase both queues are the same family
@@ -91,7 +92,7 @@ INLINE void createSwapchain(Device device, VkExtent2D extent, Window* window, bo
     else
         create_info.minImageCount = MIN(capabilities.minImageCount + 1, capabilities.maxImageCount);
 
-    if (create_render_pass) window->render_pass = createRenderPass(device, depth_format, surface_format.format);
+    if (create_extra) window->render_pass = createRenderPass(device, depth_format, surface_format.format);
 
     vkCreateSwapchainKHR(device.logical, &create_info, NULL, &window->swapchain);
 
@@ -99,13 +100,15 @@ INLINE void createSwapchain(Device device, VkExtent2D extent, Window* window, bo
     vkGetSwapchainImagesKHR(device.logical, window->swapchain, &window->image_count, NULL);
 
     // terrible horrible no good pointer slicing
-    window->color_images = malloc((sizeof(VkImage) * 10) * window->image_count);
-    window->depth_images = window->color_images + (window->image_count);
-    window->color_views = (VkImageView*)window->color_images + (window->image_count * 2);
-    window->depth_views = (VkImageView*)window->color_images + (window->image_count * 3);
-    window->depth_memories = (VkDeviceMemory*)window->color_images + (window->image_count * 4);
-    window->framebuffers = (VkFramebuffer*)window->color_images + (window->image_count * 5);
-    window->render_semaphores = (VkSemaphore*)window->color_images + (window->image_count * 6);
+    if (create_extra) {
+        window->color_images = malloc((sizeof(VkImage) * 10) * window->image_count);
+        window->depth_images = window->color_images + (window->image_count);
+        window->color_views = (VkImageView*)window->color_images + (window->image_count * 2);
+        window->depth_views = (VkImageView*)window->color_images + (window->image_count * 3);
+        window->depth_memories = (VkDeviceMemory*)window->color_images + (window->image_count * 4);
+        window->framebuffers = (VkFramebuffer*)window->color_images + (window->image_count * 5);
+        window->render_semaphores = (VkSemaphore*)window->color_images + (window->image_count * 6);
+    }
 
     vkGetSwapchainImagesKHR(device.logical, window->swapchain, &window->image_count, window->color_images);
 
@@ -115,14 +118,14 @@ INLINE void createSwapchain(Device device, VkExtent2D extent, Window* window, bo
         window->color_views[i] = createImageView(device, window->color_images[i], VK_IMAGE_VIEW_TYPE_2D, create_info.imageFormat, VK_IMAGE_ASPECT_COLOR_BIT, 1);
         window->depth_views[i] = createImageView(device, window->depth_images[i], VK_IMAGE_VIEW_TYPE_2D, depth_format, VK_IMAGE_ASPECT_DEPTH_BIT, 1);
         window->framebuffers[i] = createFramebuffer(device, window->render_pass, (VkImageView[]){window->depth_views[i], window->color_views[i]}, 2, window->extent.width, window->extent.height, 1);
-        window->render_semaphores[i] = createSemaphore(device);
+        if (create_extra) window->render_semaphores[i] = createSemaphore(device);
     }
 
     if (n_present_modes != 0) free(present_modes);
     if (n_formats != 0) free(formats);
 }
 
-INLINE void destroySwapchain(Device device, Window window) {
+INLINE void destroyFramebuffers(Device device, Window window) {
     for (u32 i = 0; i < window.image_count; i++) {
         vkDestroyFramebuffer(device.logical, window.framebuffers[i], NULL);
         vkDestroyImageView(device.logical, window.color_views[i], NULL);
@@ -130,48 +133,59 @@ INLINE void destroySwapchain(Device device, Window window) {
         vkDestroyImage(device.logical, window.depth_images[i], NULL);
         vkFreeMemory(device.logical, window.depth_memories[i], NULL);
     }
-    free(window.color_images);
+}
 
-    vkDestroySwapchainKHR(device.logical, window.swapchain, NULL);
+static void framebufferResizeCallback(GLFWwindow* window, int width, int height) {
+    bool* resized = glfwGetWindowUserPointer(window);
+    *resized = true;
 }
 
 Window createWindow(Device device, VkInstance instance, int width, int height, const char* title) {
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-    Window window = {.window = glfwCreateWindow(width, height, title, NULL, NULL)};
+    Window window = {.window = glfwCreateWindow(width, height, title, NULL, NULL), .resized = calloc(1, sizeof(bool))};
     glfwCreateWindowSurface(instance, window.window, NULL, &window.surface);
-    createSwapchain(device, (VkExtent2D){.width = width, .height = height}, &window, true);
-    window.device_loop = createDeviceLoop(device, QUEUE_TYPE_GRAPHICS);
+    createSwapchain(device, (VkExtent2D){.width = width, .height = height}, &window, true, VK_NULL_HANDLE);
+    glfwSetWindowUserPointer(window.window, window.resized);
+    glfwSetFramebufferSizeCallback(window.window, framebufferResizeCallback);
+    window.loop = createDeviceLoop(device, QUEUE_TYPE_GRAPHICS);
     return window;
 }
 
 void destroyWindow(Window window, Device device, VkInstance instance) {
     vkDeviceWaitIdle(device.logical);
     for (u32 i = 0; i < window.image_count; i++) vkDestroySemaphore(device.logical, window.render_semaphores[i], NULL);
-    destroySwapchain(device, window);
-    destroyDeviceLoop(window.device_loop, device, QUEUE_TYPE_GRAPHICS);
+    destroyFramebuffers(device, window);
+    free(window.color_images);
+    vkDestroySwapchainKHR(device.logical, window.swapchain, NULL);
+    destroyDeviceLoop(window.loop, device, QUEUE_TYPE_GRAPHICS);
     vkDestroyRenderPass(device.logical, window.render_pass, NULL);
     vkDestroySurfaceKHR(instance, window.surface, NULL);
     glfwDestroyWindow(window.window);
+    free(window.resized);
 }
 
 void resizeWindow(Window* window, Device device, VkExtent2D new_size) {
-    destroySwapchain(device, *window);
-    createSwapchain(device, new_size, window, false);
+    destroyFramebuffers(device, *window);
+    VkSwapchainKHR swapchain = window->swapchain;
+    createSwapchain(device, new_size, window, false, swapchain);
+    vkDestroySwapchainKHR(device.logical, swapchain, NULL);
+    window->extent = new_size;
 }
 
 u32 acquireNextSwapchainImage(Device device, Window* window) {
-    beginDeviceLoop(device, &window->device_loop);
+    beginDeviceLoop(device, &window->loop, true);
 
-    u32 result;
-    vkAcquireNextImageKHR(device.logical, window->swapchain, UINT64_MAX, getLoopSemaphore(window->device_loop), VK_NULL_HANDLE, &result);
+    u32 image;
+    VkResult result = vkAcquireNextImageKHR(device.logical, window->swapchain, UINT64_MAX, getLoopSemaphore(window->loop), VK_NULL_HANDLE, &image);
+    if (result == VK_SUBOPTIMAL_KHR) *window->resized = true;
 
-    return result;
+    return image;
 }
 
 void submitAndPresent(Device device, Window* window, VkCommandBuffer command, u32 image_index) {
     VkSemaphore signal_semaphore = window->render_semaphores[image_index];
 
-    submitCommandBuffer(device, &window->device_loop, command, signal_semaphore);
+    submitCommandBuffer(device, &window->loop, command, signal_semaphore);
 
     VkPresentInfoKHR present_info = {
         .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
@@ -186,14 +200,14 @@ void submitAndPresent(Device device, Window* window, VkCommandBuffer command, u3
 }
 
 VkCommandBuffer currentCommand(Window window) {
-    return window.device_loop.commands[window.device_loop.frame];
+    return window.loop.commands[window.loop.frame];
 }
 
 u32 beginWindowFrame(Window* window, Device device) {
     u32 image = acquireNextSwapchainImage(device, window);
     vkResetCommandBuffer(currentCommand(*window), 0);
     beginCommandBuffer(currentCommand(*window));
-    vkCmdBindDescriptorSets(currentCommand(*window), VK_PIPELINE_BIND_POINT_GRAPHICS, device.pipeline_layout, 0, 1, &(VkDescriptorSet){getLoopSet(window->device_loop)}, 0, NULL);
+    vkCmdBindDescriptorSets(currentCommand(*window), VK_PIPELINE_BIND_POINT_GRAPHICS, device.pipeline_layout, 0, 1, &(VkDescriptorSet){getLoopSet(window->loop)}, 0, NULL);
     return image;
 }
 
@@ -213,11 +227,16 @@ void beginWindowPass(Window window, u32 image, vec4 clear) {
 }
 
 bool isWindowResized(Window* window, Device device) {
-    int width, height;
-    glfwGetWindowSize(window->window, &width, &height);
-    if (width != window->extent.width || height != window->extent.height) {
+    if (*window->resized) {
+        *window->resized = false;
+
+        vkDeviceWaitIdle(device.logical);
+        int width = 0, height = 0;
+        glfwGetFramebufferSize(window->window, &width, &height);
         resizeWindow(window, device, (VkExtent2D){.width = width, .height = height});
+
         return true;
     }
+
     return false;
 }

@@ -20,7 +20,7 @@ DeviceLoop createDeviceLoop(Device device, QueueType type);
 void destroyDeviceLoop(DeviceLoop loop, Device device, QueueType type);
 VkDescriptorSet getLoopSet(DeviceLoop loop);
 void propogateDescriptorWrites(Device device, DeviceLoop* loop);
-void beginDeviceLoop(Device device, DeviceLoop* loop);
+void beginDeviceLoop(Device device, DeviceLoop* loop, bool reset);
 VkSemaphore getLoopSemaphore(DeviceLoop loop);
 VkFence getLoopFence(DeviceLoop loop);
 void submitCommandBuffer(Device device, DeviceLoop* loop, VkCommandBuffer command, VkSemaphore signal);
