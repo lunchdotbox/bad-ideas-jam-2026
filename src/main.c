@@ -81,21 +81,23 @@ int main() {
         applyParticleVelocity(&engine_base, 1.0f / 2400.0f);
         applyParticleVelocity(&crankshaft, 1.0f / 2400.0f);
 
-        u32 image = beginWindowFrame(&window, device);
-        beginWindowPass(window, image, (vec4){0.25f, 0.25f, 0.25f, 0.0f});
+        u32 image;
+        if (beginWindowFrame(&window, device, &image)) {
+            beginWindowPass(window, image, (vec4){0.25f, 0.25f, 0.25f, 0.0f});
 
-        setRendererCamera(device, renderer, camera);
-        vkCmdBindPipeline(currentCommand(window), VK_PIPELINE_BIND_POINT_GRAPHICS, renderer.pipeline);
+            setRendererCamera(device, renderer, camera);
+            vkCmdBindPipeline(currentCommand(window), VK_PIPELINE_BIND_POINT_GRAPHICS, renderer.pipeline);
 
-        mat4 transform;
-        glm_translate_make(transform, crankshaft.position);
-        glm_quat_rotate(transform, crankshaft.rotation, transform);
-        drawTexturedModel(currentCommand(window), renderer, device, model, texture_id, transform);
+            mat4 transform;
+            glm_translate_make(transform, crankshaft.position);
+            glm_quat_rotate(transform, crankshaft.rotation, transform);
+            drawTexturedModel(currentCommand(window), renderer, device, model, texture_id, transform);
 
-        // tickIntroCutscene(&intro, &text_font, &sounds, ct);
-        drawTextFont(currentCommand(window), device, text_renderer, &text_font, windowAspect(window));
+            // tickIntroCutscene(&intro, &text_font, &sounds, ct);
+            drawTextFont(currentCommand(window), device, text_renderer, &text_font, windowAspect(window));
 
-        endWindowFrame(&window, device, image);
+            endWindowFrame(&window, device, image);
+        }
 
         if (isWindowResized(&window, device)) {
             recreateCamera(&camera, window);

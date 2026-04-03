@@ -172,14 +172,16 @@ void resizeWindow(Window* window, Device device, VkExtent2D new_size) {
     window->extent = new_size;
 }
 
-u32 acquireNextSwapchainImage(Device device, Window* window) {
-    beginDeviceLoop(device, &window->loop, true);
+bool acquireNextSwapchainImage(Device device, Window* window, u32* image) {
+    beginDeviceLoop(device, &window->loop, false);
 
-    u32 image;
-    VkResult result = vkAcquireNextImageKHR(device.logical, window->swapchain, UINT64_MAX, getLoopSemaphore(window->loop), VK_NULL_HANDLE, &image);
-    if (result == VK_SUBOPTIMAL_KHR) *window->resized = true;
+    VkResult result = vkAcquireNextImageKHR(device.logical, window->swapchain, UINT64_MAX, getLoopSemaphore(window->loop), VK_NULL_HANDLE, image);
+    if (result == VK_SUBOPTIMAL_KHR || result == VK_ERROR_OUT_OF_DATE_KHR) *window->resized = true;
+    if (result == VK_ERROR_OUT_OF_DATE_KHR) return false;
 
-    return image;
+    vkResetFences(device.logical, 1, &window->loop.fences[window->loop.frame]);
+
+    return true;
 }
 
 void submitAndPresent(Device device, Window* window, VkCommandBuffer command, u32 image_index) {
@@ -203,12 +205,12 @@ VkCommandBuffer currentCommand(Window window) {
     return window.loop.commands[window.loop.frame];
 }
 
-u32 beginWindowFrame(Window* window, Device device) {
-    u32 image = acquireNextSwapchainImage(device, window);
+bool beginWindowFrame(Window* window, Device device, u32* image) {
+    if (!acquireNextSwapchainImage(device, window, image)) return false;
     vkResetCommandBuffer(currentCommand(*window), 0);
     beginCommandBuffer(currentCommand(*window));
     vkCmdBindDescriptorSets(currentCommand(*window), VK_PIPELINE_BIND_POINT_GRAPHICS, device.pipeline_layout, 0, 1, &(VkDescriptorSet){getLoopSet(window->loop)}, 0, NULL);
-    return image;
+    return true;
 }
 
 void endWindowFrame(Window* window, Device device, u32 image) {
