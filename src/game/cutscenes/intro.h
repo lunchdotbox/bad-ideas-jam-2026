@@ -24,6 +24,6 @@ typedef struct IntroCutscene {
 } IntroCutscene;
 
 IntroCutscene createIntroCutscene();
-void tickIntroCutscene(IntroCutscene* intro, TextFont* font, SoundsGame* sounds, u64 ct);
+void tickIntroCutscene(IntroCutscene* intro, TextFont* font, DeviceLoop loop, SoundsGame* sounds, u64 ct);
 
 #endif

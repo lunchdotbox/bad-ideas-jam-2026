@@ -93,9 +93,11 @@ int main() {
             glm_quat_rotate(transform, crankshaft.rotation, transform);
             drawTexturedModel(window.loop, renderer, device, model, texture_id, transform);
 
-            // tickIntroCutscene(&intro, &text_font, &sounds, ct);
+            tickIntroCutscene(&intro, &text_font, window.loop, &sounds, ct);
 
-            addTextCentered(&text_font, window.loop, (vec2){0, 0}, (vec2){0.2, 0.2}, COLOR_RED, "im blue");
+            // addTextRectangle(&text_font, window.loop, COLOR_BLACK, (vec2){-2.0f, -2.0f}, (vec2){4.0f, 4.0f});
+
+            // addTextCentered(&text_font, window.loop, (vec2){0, 0}, (vec2){0.2, 0.2}, COLOR_RED, "im blue");
 
             drawTextFont(window.loop, device, text_renderer, &text_font, windowAspect(window));
 

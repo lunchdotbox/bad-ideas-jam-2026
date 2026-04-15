@@ -59,8 +59,10 @@ void main() {
 
     vec2 vertex = (transform * vec3(quad_vertices[gl_VertexIndex], 1.0f)).xy * vec2(1.0f, push.aspect);
     vec2 uv = quad_uvs[gl_VertexIndex] + uv_offset;
+    vec4 tint = unpackUnorm4x8(tint_integer);
 
     gl_Position = vec4(vertex, 0.0, 1.0);
     out_uv = uv;
-    out_tint = unpackUnorm4x8(tint_integer);
+    // out_tint = vec4(sqrt(tint.r), sqrt(tint.g), sqrt(tint.b), sqrt(tint.a));
+    out_tint = tint;
 }

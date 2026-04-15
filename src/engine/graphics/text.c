@@ -130,13 +130,13 @@ void addFontIcon(TextFont *font, DeviceLoop loop, mat3 trans, Color color, TextI
         case TEXT_ICON_FULL:
             glm_scale2d_make(transform, (vec2){13.0f / 7.0f, 1.0f});
             glm_mat3_mul(trans, transform, transform);
-            font->buffer_mapped[font->n_text++] = makeTextCharacter(transform, 87, color);
+            addFontCharacters(font, loop, (TextCharacter[]){makeTextCharacter(transform, 87, color)}, 1);
             break;
         case TEXT_ICON_BOX:
-            font->buffer_mapped[font->n_text++] = makeTextCharacter(trans, 88, color);
+            addFontCharacters(font, loop, (TextCharacter[]){makeTextCharacter(trans, 88, color)}, 1);
             break;
         case TEXT_ICON_CHECK:
-            font->buffer_mapped[font->n_text++] = makeTextCharacter(trans, 89, color);
+            addFontCharacters(font, loop, (TextCharacter[]){makeTextCharacter(trans, 89, color)}, 1);
             break;
         case TEXT_ICON_CROSS:
             addFontLetter(font, loop, trans, color, 'x');
