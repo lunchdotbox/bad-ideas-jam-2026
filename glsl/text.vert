@@ -57,7 +57,7 @@ void main() {
 
     vec2 uv_offset = vec2((letter % 13) * CHAR_WIDTH, trunc(letter / 13) * CHAR_HEIGHT);
 
-    vec2 vertex = (transform * vec3(quad_vertices[gl_VertexIndex], 1.0f)).xy * vec2(1.0f, push.aspect);
+    vec2 vertex = (transform * vec3(quad_vertices[gl_VertexIndex], 1.0f)).xy * vec2(1.0f, 1.0f);
     vec2 uv = quad_uvs[gl_VertexIndex] + uv_offset;
     vec4 tint = unpackUnorm4x8(tint_integer);
 
