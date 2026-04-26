@@ -3,6 +3,7 @@
 
 #include <cglm/cglm.h>
 #include <stdalign.h>
+
 #include "window.h"
 
 typedef struct CameraPushConstant { // TODO: move this struct somewhere else and rename it cause its not just the camera data

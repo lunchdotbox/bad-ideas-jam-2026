@@ -38,6 +38,7 @@ all: $(TARGET) shaders
 
 # Build C program
 $(TARGET): $(OBJS)
+	@mkdir -p libraries
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 # Compile C source to object files
@@ -77,4 +78,4 @@ clean:
 	rm -rf $(OBJ_DIR) $(TARGET) $(SPV_DIR)
 
 # Phony targets
-.PHONY: all clean run shaders
+.PHONY: all clean run shaders clean-deps
