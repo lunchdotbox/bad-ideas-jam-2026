@@ -7,6 +7,8 @@
 #include "graphics_pipeline.h"
 #include "descriptor.h"
 #include "texture.h"
+#include "../utilities/array.h"
+
 #include <cglm/affine2d.h>
 #include <cglm/mat3.h>
 #include <cglm/vec2.h>
@@ -14,6 +16,14 @@
 #include <fcntl.h>
 #include <string.h>
 #include <vulkan/vulkan_core.h>
+
+static u8 vertex_shader_code[] = {
+    #include <text.vert.spv.h>
+};
+
+static u8 fragment_shader_code[] = {
+    #include <text.frag.spv.h>
+};
 
 static const u32 atlas_ascii_map[] = {
     ['A'] = 0, ['B'] = 1, ['C'] = 2, ['D'] = 3, ['E'] = 4, ['F'] = 5, ['G'] = 6, ['H'] = 7, ['I'] = 8, ['J'] = 9, ['K'] = 10, ['L'] = 11, ['M'] = 12,
@@ -40,8 +50,8 @@ TextRenderer createTextRenderer(Device device, PipelineConfig config) {
     config.color_attachments->colorBlendOp = VK_BLEND_OP_ADD;
     config.enable_depth = VK_FALSE;
     config.cull_mode = VK_CULL_MODE_NONE;
-    setPipelineVertexShader(&config, createShaderModule(device, "spv/text.vert.spv"));
-    setPipelineFragmentShader(&config, createShaderModule(device, "spv/text.frag.spv"));
+    setPipelineVertexShader(&config, createShaderModule(device, vertex_shader_code, ARRAY_LENGTH(vertex_shader_code)));
+    setPipelineFragmentShader(&config, createShaderModule(device, fragment_shader_code, ARRAY_LENGTH(fragment_shader_code)));
     text_renderer.pipeline = createPipeline(device, config);
     return text_renderer;
 }

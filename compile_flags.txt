@@ -1,2 +1,2 @@
--xc
--Ilibraries
+-Ibuild/.gens/lovelace/linux/x86_64/release/rules/utils/glsl2spv
+-DNDEBUG

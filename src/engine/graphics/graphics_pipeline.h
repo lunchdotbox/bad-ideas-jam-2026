@@ -21,7 +21,7 @@ typedef struct PipelineConfig {
 } PipelineConfig;
 
 VkPipelineLayout createPipelineLayout(Device device, u64 push_size, VkShaderStageFlags push_stage);
-VkShaderModule createShaderModule(Device device, const char* file_path);
+VkShaderModule createShaderModule(Device device, const u8* code, size_t n_code);
 void destroyPipelineConfig(PipelineConfig config, Device device);
 VkPipeline createPipeline(Device device, PipelineConfig config);
 void setPipelineVertexShader(PipelineConfig* config, VkShaderModule shader);

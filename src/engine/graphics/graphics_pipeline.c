@@ -29,20 +29,16 @@ VkPipelineLayout createPipelineLayout(Device device, u64 push_size, VkShaderStag
     return layout;
 }
 
-VkShaderModule createShaderModule(Device device, const char* file_path) {
-    u32* code;
-    size_t code_size = readFile(file_path, (u8**)&code);
-
+VkShaderModule createShaderModule(Device device, const u8* code, size_t n_code) {
     VkShaderModuleCreateInfo create_info = {
         .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
-        .codeSize = code_size,
-        .pCode = code,
+        .codeSize = n_code,
+        .pCode = (const u32*)code,
     };
 
     VkShaderModule shader_module;
     vkCreateShaderModule(device.logical, &create_info, NULL, &shader_module);
 
-    free(code);
     return shader_module;
 }
 

@@ -4,13 +4,22 @@
 #include "device_loop.h"
 #include "graphics_pipeline.h"
 #include "uniform.h"
+#include "../utilities/array.h"
+
+static u8 vertex_shader_code[] = {
+    #include <terrain.vert.spv.h>
+};
+
+static u8 fragment_shader_code[] = {
+    #include <diffuse.frag.spv.h>
+};
 
 DiffuseRenderer createDiffuseRenderer(Device device, DeviceLoop* loop, PipelineConfig config) {
     DiffuseRenderer renderer;
     renderer.uniform = createUniformBuffer(device, sizeof(mat4));
     registerUniformBuffer(device, loop, renderer.uniform, sizeof(mat4), renderer.uniform_ids);
-    setPipelineVertexShader(&config, createShaderModule(device, "spv/terrain.vert.spv"));
-    setPipelineFragmentShader(&config, createShaderModule(device, "spv/diffuse.frag.spv"));
+    setPipelineVertexShader(&config, createShaderModule(device, vertex_shader_code, ARRAY_LENGTH(vertex_shader_code)));
+    setPipelineFragmentShader(&config, createShaderModule(device, fragment_shader_code, ARRAY_LENGTH(fragment_shader_code)));
     renderer.pipeline = createPipeline(device, config);
     return renderer;
 }
@@ -22,8 +31,8 @@ void destroyDiffuseRenderer(Device device, DiffuseRenderer renderer) {
 
 void recreateDiffuseRenderer(Device device, DiffuseRenderer* renderer, PipelineConfig config) {
     vkDestroyPipeline(device.logical, renderer->pipeline, NULL);
-    setPipelineVertexShader(&config, createShaderModule(device, "spv/terrain.vert.spv"));
-    setPipelineFragmentShader(&config, createShaderModule(device, "spv/diffuse.frag.spv"));
+    setPipelineVertexShader(&config, createShaderModule(device, vertex_shader_code, ARRAY_LENGTH(vertex_shader_code)));
+    setPipelineFragmentShader(&config, createShaderModule(device, fragment_shader_code, ARRAY_LENGTH(fragment_shader_code)));
     renderer->pipeline = createPipeline(device, config);
 }
 
